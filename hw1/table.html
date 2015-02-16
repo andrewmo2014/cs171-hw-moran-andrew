@@ -21,13 +21,42 @@
             padding-bottom:4px;
         }
 
-        th:hover {
-            cursor: n-resize;
+        th {
+            padding-left:24px;
+            padding-right:24px;
+
+            background-image: url(img/bg.gif);
+            background-repeat: no-repeat;
+            background-position: center right;
+
+            cursor: pointer;
         }
 
-        tr.row:hover {
+        th[chosen = true] {
+            background-color: cornflowerblue;
+        }
+
+        th.headerSortUp {
+            background-image: url(img/asc.gif);
+        }
+
+        th.headerSortDown {
+            background-image: url(img/desc.gif);
+        }
+
+        tr.row[chosen = true] {
             background-color: yellow;
         }
+
+        tr.odd {
+            background-color: lightgray;
+        }
+
+        tr.even {
+            background-color: ghostwhite;
+        }
+
+
 
     </style>
 </head>
@@ -40,10 +69,10 @@
     var SelectedCols = Object.keys(dataMapping);
     var CenteredCols = 2;
 
-
     d3.json("data/countries_2012.json", function(error, data){
 
         var columns = SelectedCols;
+        var sortDown = false;
 
         var table = d3.select("body").append("table"),
                 thead = table.append("thead")
@@ -59,16 +88,39 @@
                 .append("th")
                 .text(function(d) { return d; })
                 .on("click", function(header, i) {
-                    console.log(header);
-                    tbody.selectAll("tr").sort(function(a, b) {
-                        return d3.descending(a[header], b[header]);
+
+                    sortDown = !sortDown;                   //Toggle Sort Order
+
+                    tbody.selectAll("tr").sort(function (a, b) {
+                        if (sortDown)   return d3.ascending(a[header], b[header]);
+                        else            return d3.descending(a[header], b[header]);
                     });
+
+                    UpdateTable();                          //Reset/Update Table Accordingly
+
+                    //Highlight Header On Selection
+                    var elt = d3.select(this);
+                    elt.attr( "chosen", true);
+                    elt.classed( sortDown    ? "headerSortDown" : "headerSortUp", true);
+                    elt.classed( !(sortDown) ? "headerSortDown" : "headerSortUp", false);
+
                 });
 
         var rows = tbody.selectAll("tr.row")
                 .data(data)
                 .enter()
-                .append("tr").attr("class", "row");
+                .append("tr").attr("class", "row")
+                .on( "mouseover", function() {                      //Hover ON
+                    d3.select(this).attr("chosen", true);
+                })
+                .on( "mouseout", function(d,i) {
+                    d3.select(this).attr("chosen", false);          //Hover OFF
+                })
+                .style( "background-color", function(d,i){          //Initialize Zebra Pattern
+                    var elt = d3.select(this);
+                    elt.classed( (i%2)==0 ? "odd" : "even", true);
+                    elt.classed( (i%2)==1 ? "odd" : "even", false);
+                });
 
         var cells = rows.selectAll("td")
                 .data(function(row) {
@@ -79,22 +131,39 @@
                 .enter()
                 .append("td")
                 .text(function(d, i) {
+
+                //Format columns based on header
                     if( i === dataMapping.gdp)              d = d3.round(d/1e9, 1) + "G";
                     if( i === dataMapping.life_expectancy)  d = d3.format(".1f")(d);
                     if( i === dataMapping.population)       d = d3.format(",")(d);
                     return d;
                 })
+
                 .style("text-align", function(d,i){
+
+                //Format alignment based on left-most cols
                     if( i < CenteredCols )  return "center";
                     else                    return "right";
                 });
 
+        var UpdateTable = function(){
+            thead.selectAll("th")                                       //Reset Header Labels
+                    .attr("chosen", false)
+                    .classed( "headerSortUp", false)
+                    .classed( "headerSortDown", false);
+
+            tbody.selectAll("tr.row")
+                    .each( function(d,i){                               //Update Zebra Pattern
+                        var elt = d3.select(this);
+                        elt.classed( (i%2)==0 ? "odd" : "even", true);
+                        elt.classed( (i%2)==1 ? "odd" : "even", false);
+                    }
+            );
+        };
+
     });
 
-    var toggleSorting = function( order ){
 
-
-    }
 
 
 
