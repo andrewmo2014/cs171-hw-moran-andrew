@@ -8,6 +8,26 @@
     <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
     <style type="text/css">
 
+        table {
+            border-collapse: collapse;
+            border-spacing: 1px;
+        }
+
+        caption,td,th,tr {
+            border: 1px solid darkgrey;
+            padding-left:7px;
+            padding-right:7px;
+            padding-top:4px;
+            padding-bottom:4px;
+        }
+
+        th:hover {
+            cursor: n-resize;
+        }
+
+        tr.row:hover {
+            background-color: yellow;
+        }
 
     </style>
 </head>
@@ -18,6 +38,7 @@
     // Specific cols we want in table, along with index mapping
     var dataMapping = { "name":0, "continent":1, "gdp":2, "life_expectancy":3, "population":4, "year":5 };
     var SelectedCols = Object.keys(dataMapping);
+    var CenteredCols = 2;
 
 
     d3.json("data/countries_2012.json", function(error, data){
@@ -38,6 +59,7 @@
                 .append("th")
                 .text(function(d) { return d; })
                 .on("click", function(header, i) {
+                    console.log(header);
                     tbody.selectAll("tr").sort(function(a, b) {
                         return d3.descending(a[header], b[header]);
                     });
@@ -47,7 +69,6 @@
                 .data(data)
                 .enter()
                 .append("tr").attr("class", "row");
-
 
         var cells = rows.selectAll("td")
                 .data(function(row) {
@@ -63,8 +84,17 @@
                     if( i === dataMapping.population)       d = d3.format(",")(d);
                     return d;
                 })
+                .style("text-align", function(d,i){
+                    if( i < CenteredCols )  return "center";
+                    else                    return "right";
+                });
 
     });
+
+    var toggleSorting = function( order ){
+
+
+    }
 
 
 
