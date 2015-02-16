@@ -56,14 +56,120 @@
             background-color: ghostwhite;
         }
 
+        .slider-width{
+            width: 500px;
+            vertical-align: top;
+            position: relative;
+            top: -3px;
+        }
+
+        .interactive{
+            width:120px;
+            float: left;
+        }
+
+        .check-label{
+            padding-right: 20px;
+        }
+
+        input[type="checkbox"] {
+            display:none;
+        }
+
+        input[type="checkbox"] + label {
+            /*color:#f2f2f2;*/
+            /*font-family:Arial, sans-serif;*/
+            /*font-size:14px;*/
+        }
+
+        input[type="checkbox"] + label span {
+            display:inline-block;
+            width:19px;
+            height:19px;
+            margin:-1px 4px 0 0;
+            vertical-align:middle;
+            background:url(img/check_radio_sheet.png) left top no-repeat;
+            cursor:pointer;
+        }
+
+        input[type="checkbox"]:checked + label span {
+            background:url(img/check_radio_sheet.png) -19px top no-repeat;
+        }
+
+        input[type="radio"] {
+            display:none;
+        }
+
+        input[type="radio"] + label {
+            /*color:#f2f2f2;*/
+            /*font-family:Arial, sans-serif;*/
+            /*font-size:14px;*/
+        }
+
+        input[type="radio"] + label span {
+            display:inline-block;
+            width:19px;
+            height:19px;
+            margin:-1px 4px 0 0;
+            vertical-align:middle;
+            background:url(img/check_radio_sheet.png) -38px top no-repeat;
+            cursor:pointer;
+        }
+
+        input[type="radio"]:checked + label span {
+            background:url(img/check_radio_sheet.png) -57px top no-repeat;
+        }
+
 
 
     </style>
 </head>
 
 <body>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+        <div>
+        <label >
+            <label class = interactive>Time update:</label>
+            <label>1995 </label>
+            <input class="slider-width" type="range" name="points" width = "300" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";">
+            <label>2012</label>
+        </label>
+        </div>
+
+        <div>
+        <label class = "interactive" >Filter by: </label>
+            <input class="table-chk" type="checkbox" id="c1" name="Americas" value="Americas" title="Americas"
+                   onchange="console.log(this.id + this.checked)"></input>
+            <label for="c1" class="check-label" ><span></span>Americas</label>
+            <input class="table-chk" type="checkbox" id="c2" name="Africa" value="Africa" title="Africa"
+                   onchange="console.log(this.id + this.checked)"></input>
+            <label for="c2" class="check-label" ><span></span>Africa</label>
+            <input class="table-chk" type="checkbox" id="c3" name="Asia" value="Asia" title="Asia"
+                   onchange="console.log(this.id + this.checked)"></input>
+
+            <label for="c3" class="check-label" ><span></span>Asia</label>
+            <input class="table-chk" type="checkbox" id="c4" name="Europe" value="Europe" title="Europe"
+                   onchange="console.log(this.id + this.checked)"></input>
+
+            <label for="c4" class="check-label" ><span></span>Europe</label>
+            <input class="table-chk" type="checkbox" id="c5" name="Oceania" value="Oceania" title="Oceania"
+                   onchange="console.log(this.id + this.checked)"></input>
+
+            <label for="c5" class="check-label" ><span></span>Oceania</label>
+        </div>
+
+        <div>
+        <label class = "interactive" >Aggregation: </label>
+            <input type="radio" id="r1" name="agg">
+            <label for="r1" style="padding-right: 20px"><span></span>None</label>
+            <input type="radio" id="r2" name="agg">
+            <label for="r2"><span></span>By continent</label>
+        </div>
+
+
+        <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
+
+
     // Specific cols we want in table, along with index mapping
     var dataMapping = { "name":0, "continent":1, "gdp":2, "life_expectancy":3, "population":4, "year":5 };
     var SelectedCols = Object.keys(dataMapping);
@@ -80,7 +186,9 @@
         tbody = table.append("tbody");
 
         table.append("caption")
-                .html("World Countries Ranking");
+                .html("World Countries Ranking")
+                .style("background-color", "black")
+                .style("color", "white");
 
         thead.append("tr").selectAll("th")
                 .data(columns)
