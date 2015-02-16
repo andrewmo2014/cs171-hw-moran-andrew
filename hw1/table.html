@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+
+<head>
+    <meta charset="utf-8">
+    <title>CS171-HW1: Table</title>
+    <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+    <style type="text/css">
+
+
+    </style>
+</head>
+
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+    // Specific cols we want in table, along with index mapping
+    var dataMapping = { "name":0, "continent":1, "gdp":2, "life_expectancy":3, "population":4, "year":5 };
+    var SelectedCols = Object.keys(dataMapping);
+
+
+    d3.json("data/countries_2012.json", function(error, data){
+
+        var columns = SelectedCols;
+
+        var table = d3.select("body").append("table"),
+                thead = table.append("thead")
+                        .attr("class", "thead");
+        tbody = table.append("tbody");
+
+        table.append("caption")
+                .html("World Countries Ranking");
+
+        thead.append("tr").selectAll("th")
+                .data(columns)
+                .enter()
+                .append("th")
+                .text(function(d) { return d; })
+                .on("click", function(header, i) {
+                    tbody.selectAll("tr").sort(function(a, b) {
+                        return d3.descending(a[header], b[header]);
+                    });
+                });
+
+        var rows = tbody.selectAll("tr.row")
+                .data(data)
+                .enter()
+                .append("tr").attr("class", "row");
+
+
+        var cells = rows.selectAll("td")
+                .data(function(row) {
+                    return SelectedCols.map(function(column) {
+                        return row[column];
+                    });
+                })
+                .enter()
+                .append("td")
+                .text(function(d, i) {
+                    if( i === dataMapping.gdp)              d = d3.round(d/1e9, 1) + "G";
+                    if( i === dataMapping.life_expectancy)  d = d3.format(".1f")(d);
+                    if( i === dataMapping.population)       d = d3.format(",")(d);
+                    return d;
+                })
+
+    });
+
+
+
+</script>
+</body>
+</html>
