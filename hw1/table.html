@@ -159,9 +159,9 @@
 
         <div>
         <label class = "interactive" >Aggregation: </label>
-            <input type="radio" id="r1" name="agg" checked="checked">
+            <input type="radio" id="r1" name="agg" checked="checked" onchange="">
             <label for="r1" style="padding-right: 20px"><span></span>None</label>
-            <input type="radio" id="r2" name="agg">
+            <input type="radio" id="r2" name="agg" onchange="">
             <label for="r2"><span></span>By continent</label>
         </div>
 
@@ -175,12 +175,34 @@
     var SelectedCols = Object.keys(dataMapping);
 
     var refinedData;
+    var basisData;
 
+    d3.json("data/countries_2012.json", function(error, data) {
 
-    d3.json("data/countries_2012.json", function(error, data){
-
+        basisData = data;
         refinedData = data;
 
+        var aggregateData = d3.nest()
+                .key(function (d) {
+                    return d.continent
+                })
+                .rollup(function (d) {
+
+                    return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
+                            "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
+                            "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
+                }).entries(data);
+
+        aggregateData.forEach(function(d){
+            d.name = d.key;
+            d.continent = d.key;
+            d.gdp = d.values.sumGDP;
+            d.life_expectancy = d.values.avgLE;
+            d.population = d.values.sumPOP;
+            d.values = null;
+        });
+
+        var showContAggregation = false;
         var contFiltersFinal = [];
         var inputs = d3.selectAll("input");
         inputs.on("change", function() {
@@ -189,10 +211,17 @@
                 if (d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
                     contFilters.push(d3.select(this).attr("name"));
                 }
+                if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("id") == "r1") {
+                    showContAggregation = !d3.select(this).node().checked;
+                    console.log( showContAggregation );
+                }
+
             });
             contFiltersFinal = contFilters;
 
-            refinedData = data.filter( function(d){
+            basisData = (showContAggregation) ? aggregateData : data;
+
+            refinedData = basisData.filter( function(d){
 
                 if (contFiltersFinal.length > 0) {
                     if (contFiltersFinal.indexOf(d.continent) >= 0) {
@@ -203,6 +232,7 @@
                     return d;
                 }
             });
+
             PopulateTable();
             UpdateTable();
         });
