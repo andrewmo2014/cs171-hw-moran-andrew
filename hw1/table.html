@@ -129,9 +129,9 @@
         <div>
         <label >
             <label class = interactive>Time update:</label>
-            <label>1995 </label>
+            <label id="minYear">1995 </label>
             <input class="slider-width" type="range" name="points" width = "300" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";">
-            <label>2012</label>
+            <label id="maxYear">2012</label>
         </label>
         </div>
 
@@ -169,75 +169,51 @@
         <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
 
+    d3.json( "data/countries_1995_2012.json", function(error, data) {
 
-    // Specific cols we want in table, along with index mapping
-    var dataMapping = { "name":0, "continent":1, "gdp":2, "life_expectancy":3, "population":4, "year":5 };
-    var SelectedCols = Object.keys(dataMapping);
+        //Calculate year range
+        var minYear = Number.MAX_VALUE;
+        var maxYear = Number.MIN_VALUE;
 
-    var refinedData;
-    var basisData;
+        var restructuredData = CalculateRestructuredData();     //New Data
 
-    d3.json("data/countries_2012.json", function(error, data) {
+        //Update year labels
+        document.getElementById('minYear').innerHTML = minYear.toString();
+        document.getElementById('maxYear').innerHTML = maxYear.toString();
 
-        basisData = data;
-        refinedData = data;
+        //Reference Current Year
+        var timeSlider = document.getElementById("slider-time");
+        var yearIndex = timeSlider.value - timeSlider.min;
 
-        var aggregateData = d3.nest()
-                .key(function (d) {
-                    return d.continent
-                })
-                .rollup(function (d) {
+        // Map cols for indexing (and specifying) later
+        var dataMapping = { "name":0, "continent":1, "gdp":2, "life_expectancy":3, "population":4, "year":5 };
+        var SelectedCols = Object.keys(dataMapping);
 
-                    return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
-                            "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
-                            "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
-                }).entries(data);
+        // Placeholders for data manipulation
+        var basisData = restructuredData[yearIndex];                   //Data To Use
+        var refinedData = restructuredData[yearIndex];                 //Filtered
 
-        aggregateData.forEach(function(d){
-            d.name = d.key;
-            d.continent = d.key;
-            d.gdp = d.values.sumGDP;
-            d.life_expectancy = d.values.avgLE;
-            d.population = d.values.sumPOP;
-            d.values = null;
-        });
-
+        //Initialize input vars
         var showContAggregation = false;
         var contFiltersFinal = [];
+
+        //Apply Input Interaction
         var inputs = d3.selectAll("input");
-        inputs.on("change", function() {
-            var contFilters = [];
-            inputs.each(function (d, i) {
-                if (d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
-                    contFilters.push(d3.select(this).attr("name"));
-                }
-                if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("id") == "r1") {
-                    showContAggregation = !d3.select(this).node().checked;
-                    console.log( showContAggregation );
-                }
-
-            });
-            contFiltersFinal = contFilters;
-
-            basisData = (showContAggregation) ? aggregateData : data;
-
-            refinedData = basisData.filter( function(d){
-
-                if (contFiltersFinal.length > 0) {
-                    if (contFiltersFinal.indexOf(d.continent) >= 0) {
-                        return d;
-                    }
-                }
-                else{
-                    return d;
-                }
-            });
-
+        inputs.on("input", function(){
+            yearIndex = timeSlider.value - timeSlider.min;
+            ApplyFilters();
             PopulateTable();
-            UpdateTable();
+            FormatTable();
+        });
+        inputs.on("change", function() {
+            ApplyFilters();
+            PopulateTable();
+            FormatTable();
         });
 
-
+        ///////////////////
+        // Create Table
+        ///////////////////
         var columns = SelectedCols;
         var sortDown = false;
 
@@ -265,7 +241,7 @@
                         else            return d3.descending(a[header], b[header]);
                     });
 
-                    UpdateTable();                          //Reset/Update Table Accordingly
+                    FormatTable();                          //Reset/Update Table Accordingly
 
                     //Highlight Header On Selection
                     var elt = d3.select(this);
@@ -277,6 +253,87 @@
 
         PopulateTable();
 
+        ///////////////////////////////////////////////
+        // Helper functions
+        //////////////////////////////////////////////
+
+        //Update Data due to filters
+        function ApplyFilters() {
+            var contFilters = [];
+            inputs.each(function (d, i) {
+                if (d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
+                    contFilters.push(d3.select(this).attr("name"));
+                }
+                if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("id") == "r1") {
+                    showContAggregation = !d3.select(this).node().checked;
+                }
+
+            });
+            contFiltersFinal = contFilters;
+            var aggregateData = CalculateAggregateData();
+
+            basisData = (showContAggregation) ? aggregateData : restructuredData[yearIndex];
+
+            refinedData = basisData.filter(function (d) {
+                if (contFiltersFinal.length > 0) {
+                    if (contFiltersFinal.indexOf(d.continent) >= 0) {   return d;   }
+                }
+                else {  return d;   }
+            });
+        }
+
+        //Reformat Data since nested (multi-year)
+        function CalculateRestructuredData() {
+            var restructuredData = [];
+            for (var i = 0; i < data.length; i++) {
+                for (var j = 0; j < data[i].years.length; j++) {
+
+                    if (i==0) {
+                        restructuredData[j] = new Array();
+
+                        minYear = (data[i].years[j].year < minYear) ? data[i].years[j].year : minYear;
+                        maxYear = (data[i].years[j].year > maxYear) ? data[i].years[j].year : maxYear;
+                    }
+
+                    restructuredData[j].push(
+                            {
+                                'name': data[i].name,
+                                'continent': data[i].continent,
+                                'gdp': data[i].years[j].gdp,
+                                'life_expectancy': data[i].years[j].life_expectancy,
+                                'population': data[i].years[j].population,
+                                'year': data[i].years[j].year
+                            });
+                }
+            }
+            return restructuredData;
+        }
+
+        //Aggregate Data...based on year
+        function CalculateAggregateData() {
+            var aggregateData = d3.nest()           //Aggregated
+                    .key(function (d) {
+                        return d.continent
+                    })
+                    .rollup(function (d) {
+
+                        return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
+                            "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
+                            "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
+                    }).entries(restructuredData[yearIndex]);
+
+            aggregateData.forEach(function(d){      //Rename variables
+                d.name = d.key;
+                d.continent = d.key;
+                d.gdp = d.values.sumGDP;
+                d.life_expectancy = d.values.avgLE;
+                d.population = d.values.sumPOP;
+                d.year = minYear + yearIndex;
+            });
+            return aggregateData;
+        }
+
+        //Populate Table with Updated Values
         function PopulateTable() {
 
             var rows = tbody.selectAll("tr.row")
@@ -352,8 +409,8 @@
             rows.exit().remove();
         }
 
-
-        var UpdateTable = function(){
+        //Update Table Formatting Properties
+        function FormatTable() {
             thead.selectAll("th")                                       //Reset Header Labels
                     .attr("chosen", false)
                     .classed( "headerSortUp", false)
@@ -368,15 +425,7 @@
             );
         };
 
-
-
     });
-
-
-
-
-
-
 
 </script>
 </body>
