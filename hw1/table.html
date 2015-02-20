@@ -317,8 +317,8 @@
                     .rollup(function (d) {
 
                         return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
-                            "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
-                            "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
+                                "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
+                                "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
                     }).entries(restructuredData[yearIndex]);
 
             aggregateData.forEach(function(d){      //Rename variables
