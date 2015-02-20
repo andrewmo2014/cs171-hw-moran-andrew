@@ -365,7 +365,7 @@
 
             var cells = rows.selectAll("td")
                     .data(function (row) {
-                        return SelectedCols.map(function (column) {
+                        return columns.map(function (column) {
                             return row[column];
                         });
                     })
