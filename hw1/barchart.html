@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<head>
+    <title>CS171-HW1: BarChart</title>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <style type="text/css">
+        rect {
+            fill:teal;
+            fill-opacity:.8;
+        }
+
+        .slider-width{
+            width: 500px;
+            vertical-align: top;
+            position: relative;
+            top: -3px;
+        }
+
+        .interactive{
+            width:120px;
+            float: left;
+        }
+
+        .check-label{
+            padding-right: 20px;
+        }
+
+        input[type="checkbox"] {
+            display:none;
+        }
+
+        input[type="checkbox"] + label {
+            /*color:#f2f2f2;*/
+            /*font-family:Arial, sans-serif;*/
+            /*font-size:14px;*/
+        }
+
+        input[type="checkbox"] + label span {
+            display:inline-block;
+            width:19px;
+            height:19px;
+            margin:-1px 4px 0 0;
+            vertical-align:middle;
+            background:url(img/check_radio_sheet.png) left top no-repeat;
+            cursor:pointer;
+        }
+
+        input[type="checkbox"]:checked + label span {
+            background:url(img/check_radio_sheet.png) -19px top no-repeat;
+        }
+
+        input[type="radio"] {
+            display:none;
+        }
+
+        input[type="radio"] + label {
+            /*color:#f2f2f2;*/
+            /*font-family:Arial, sans-serif;*/
+            /*font-size:14px;*/
+        }
+
+        input[type="radio"] + label span {
+            display:inline-block;
+            width:19px;
+            height:19px;
+            margin:-1px 4px 0 0;
+            vertical-align:middle;
+            background:url(img/check_radio_sheet.png) -38px top no-repeat;
+            cursor:pointer;
+        }
+
+        input[type="radio"]:checked + label span {
+            background:url(img/check_radio_sheet.png) -57px top no-repeat;
+        }
+
+    </style>
+</head>
+<body>
+
+<div>
+    <label >
+        <label class = interactive>Time update:</label>
+        <label id="minYear">1995 </label>
+        <input class="slider-width" type="range" name="points" width = "300" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";">
+        <label id="maxYear">2012</label>
+    </label>
+</div>
+
+<div>
+    <label class = "interactive" >Encode bars by: </label>
+    <input type="radio" id="rA1" name="aggA" checked="checked" onchange="">
+    <label for="rA1" style="padding-right: 20px"><span></span>Population</label>
+    <input type="radio" id="rA2" name="aggA" onchange="">
+    <label for="rA2"><span></span>GDP</label>
+</div>
+
+<div>
+    <label class = "interactive" >Filter by: </label>
+    <input class="table-chk" type="checkbox" id="c1" name="Americas" value="Americas" title="Americas"
+           onchange=""></input>
+    <label for="c1" class="check-label" ><span></span>Americas</label>
+    <input class="table-chk" type="checkbox" id="c2" name="Africa" value="Africa" title="Africa"
+           onchange=""></input>
+    <label for="c2" class="check-label" ><span></span>Africa</label>
+    <input class="table-chk" type="checkbox" id="c3" name="Asia" value="Asia" title="Asia"
+           onchange=""></input>
+    <label for="c3" class="check-label" ><span></span>Asia</label>
+    <input class="table-chk" type="checkbox" id="c4" name="Europe" value="Europe" title="Europe"
+           onchange=""></input>
+    <label for="c4" class="check-label" ><span></span>Europe</label>
+    <input class="table-chk" type="checkbox" id="c5" name="Oceania" value="Oceania" title="Oceania"
+           onchange=""></input>
+    <label for="c5" class="check-label" ><span></span>Oceania</label>
+</div>
+
+<div>
+    <label class = "interactive" >Aggregation: </label>
+    <input type="radio" id="rB1" name="aggB" checked="checked" onchange="">
+    <label for="rB1" style="padding-right: 20px"><span></span>Country</label>
+    <input type="radio" id="rB2" name="aggB" onchange="">
+    <label for="rB2"><span></span>Continent</label>
+</div>
+
+<div>
+    <label class = "interactive" >Sort by: </label>
+    <input type="radio" id="rC1" name="aggC" checked="checked" onchange="">
+    <label for="rC1" style="padding-right: 20px"><span></span>Name</label>
+    <input type="radio" id="rC2" name="aggC" onchange="">
+    <label for="rC2" style="padding-right: 20px"><span></span>Population</label>
+    <input type="radio" id="rC3" name="aggC" onchange="">
+    <label for="rC3"><span></span>GDP</label>
+</div>
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script type="text/javascript">
+
+    var margin = {top: 50, bottom: 10, left:300, right: 40};
+    var width = 900 - margin.left - margin.right;
+    var height = 900 - margin.top - margin.bottom;
+
+    var xScale = d3.scale.linear().range([0, width]);
+    var yScale = d3.scale.ordinal().rangeRoundBands([0, height], .8, 0);
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width+margin.left+margin.right)
+            .attr("height", height+margin.top+margin.bottom);
+
+    var g = svg.append("g")
+            .attr("transform", "translate("+margin.left+","+margin.top+")");
+
+    d3.json("data/countries_2012.json", function(data) {
+
+        var max = d3.max(data, function(d) { return d.population; } );
+        var min = 0;
+
+        xScale.domain([min, max]);
+        yScale.domain(data.map(function(d) { return d.name; }));
+
+        var rows = g.append("g")
+                .selectAll("g.row")
+                .data(data)
+                .enter()
+                .append("g")
+                .attr("class", "row")
+
+        var bars = rows
+                .append("rect")
+                .attr("width", function(d) { return xScale(d.population); })
+                .attr("height", 5)
+                .attr("x", xScale(min))
+                .attr("y", function(d) { return yScale(d.name); })
+    });
+</script>
+</body>
+</html>

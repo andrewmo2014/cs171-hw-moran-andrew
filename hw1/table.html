@@ -3,7 +3,6 @@
 <meta charset="utf-8">
 
 <head>
-    <meta charset="utf-8">
     <title>CS171-HW1: Table</title>
     <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
     <style type="text/css">
@@ -381,10 +380,7 @@
                     .style("text-align", function (d, i) {
 
                         //Format alignment based on left-most cols
-                        if (i === dataMapping.name || i === dataMapping.continent)
-                            return "center";
-                        else
-                            return "right";
+                        return (i === dataMapping.name || i === dataMapping.continent) ? "center" : "right";
                     });
 
             cells.enter()
