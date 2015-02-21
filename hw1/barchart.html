@@ -184,6 +184,7 @@
         //Initialize input vars
         var encodingVal = document.getElementById('rA1').title;
         var sortingValCurrent = document.getElementById('rC1').title;
+        var sortingValPrev = sortingValCurrent;                         //Did sorting change
         var showContAggregation = false;
         var contFiltersFinal = [];
 
@@ -191,143 +192,20 @@
         var inputs = d3.selectAll("input");
         inputs.on("input", function(){
             yearIndex = timeSlider.value - timeSlider.min;
-            console.log(true);
             ApplyFilters();
             EncodeBars();
             SortBars();
-
         });
         inputs.on("change", function() {
-            console.log("here");
             ApplyFilters();
             EncodeBars();
             SortBars();
-
         });
 
         //Initialize Bar Chart
         ApplyFilters();
         EncodeBars();
         SortBars();
-
-        //Complete sorting for bar chart
-        function SortBars() {
-
-            var rows = g.selectAll("g.row")
-                    .sort(function (a, b) {
-                        if (sortingValCurrent == "name") {
-                            return d3.ascending(a["name"], b["name"]);
-                        }
-                        if (sortingValCurrent == "population") {
-                            return b["population"] - a["population"];
-                        }
-                        if (sortingValCurrent == "gdp") {
-                            return b["gdp"] - a["gdp"];
-                        }
-                    });
-
-            yScale.domain(rows.data().map(function (d) {
-                return d.name;
-            }));
-
-            var rows = g.selectAll("g.row")
-            var bars = rows.selectAll("rect")
-            var labels = rows.selectAll("text");
-
-            bars.data( function(d){
-                return [d];
-            })
-                    .transition()
-                    .delay(delayTime)
-                    .duration(durationTime)
-                    .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize);
-                    });
-
-            labels.data( function(d){
-                return [d];
-            })
-                    .transition()
-                    .delay(delayTime)
-                    .duration(durationTime)
-                    .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize) + padTextY;
-                    });
-
-        }
-
-        //Create/update bars and labels
-        function EncodeBars() {
-
-            //Construct Bar Chart
-            var max = d3.max(refinedData, function (d) {
-                return d[encodingVal];
-            });
-            var min = 0;
-
-            xScale.domain([min, max]);
-            yScale.domain(refinedData.map(function (d) {
-                return d.name;
-            }));
-
-            var rows = g.selectAll("g.row")
-                    .data(refinedData);
-
-            rows.enter()
-                    .append("g")
-                    .attr("class", "row");
-
-            var bars = rows.selectAll("rect")
-                    .data( function(d){
-                        return [d];
-                    });
-
-            bars.enter().append("rect");
-
-            bars.attr("width", function (d) {
-                        return xScale(d[encodingVal]);
-                    })
-                    .attr("x", xScale(min))
-                    .attr("height", barY)//Fixed height, unless use yScale.rangeBand()))
-                    .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize);
-                    })
-                    // Associate country color with Continent
-                    .style("fill", function(d){
-                        switch(d.continent){
-                            case "Americas":    return colors(0);   break;
-                            case "Africa":      return colors(1);   break;
-                            case "Asia":        return colors(2);   break;
-                            case "Europe":      return colors(3);   break;
-                            case "Oceania":     return colors(4);   break;
-                            default:            return "black";     break;
-                        }
-                    });
-
-
-            var labels = rows.selectAll("text")
-                    .data( function(d){ return [d]; });
-
-            labels.enter().append("text");
-
-            labels.text(function (d) {
-                        return d.name;
-                    })
-                    .attr("text-anchor", "end")
-                    .attr("x", function () {
-                        return xScale(min) - padTextX;
-                    })
-                    .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize) + padTextY;
-                    })
-                    .attr("font-family", "sans-serif")
-                    .attr("font-size", "11px")
-                    .attr("fill", "black");
-
-            labels.exit().remove();
-            bars.exit().remove();
-            rows.exit().remove();
-        }
 
         //Update Data due to filters
         function ApplyFilters() {
@@ -353,7 +231,6 @@
             contFiltersFinal = contFilters;
 
             var aggregateData = CalculateAggregateData();
-
             basisData = (showContAggregation) ? aggregateData : restructuredData[yearIndex];
 
             refinedData = basisData.filter(function (d) {
@@ -363,6 +240,147 @@
                 else {  return d;   }
             });
 
+            //Use current sorting before applying new sorting
+            refinedData.sort(compareCountriesCurrent);
+
+        }
+
+        //Create/update bars and labels
+        function EncodeBars() {
+
+            //Construct Bar Chart
+            var max = d3.max(refinedData, function (d) {
+                return d[encodingVal];
+            });
+            var min = 0;
+
+            xScale.domain([min, max]);
+            yScale.domain(refinedData.map(function (d) {
+                return d.name;
+            }));
+
+            var rows = g.selectAll("g.row")
+                    .data(refinedData);
+
+            rows.enter()
+                    .append("g").attr("class", "row")
+
+            var bars = rows.selectAll("rect")
+                    .data( function(d){ return [d]; });
+
+            bars.enter()
+                    .append("rect");
+
+            bars.attr("width", function (d) {
+                        return xScale(d[encodingVal]);
+                    })
+                    .attr("x", xScale(min))
+                    .attr("height", barY)//Fixed height, unless use yScale.rangeBand()))
+                    // Associate country color with Continent
+                    .style("fill", function(d){
+                        switch(d.continent){
+                            case "Americas":    return colors(0);   break;
+                            case "Africa":      return colors(1);   break;
+                            case "Asia":        return colors(2);   break;
+                            case "Europe":      return colors(3);   break;
+                            case "Oceania":     return colors(4);   break;
+                            default:            return "black";     break;
+                        }
+                    })
+                    .attr("y", function (d) {
+                        return yScale(d.name) * (refinedData.length/maxDataSize);
+                    });
+
+            var labels = rows.selectAll("text")
+                    .data( function(d){ return [d]; });
+
+            labels.enter()
+                    .append("text");
+
+            labels.text(function (d) {
+                        return d.name;
+                    })
+                    .attr("text-anchor", "end")
+                    .attr("x", function () {
+                        return xScale(min) - padTextX;
+                    })
+                    .attr("y", function (d) {
+                        return yScale(d.name) * (refinedData.length/maxDataSize) + padTextY;
+                    })
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", "11px")
+                    .attr("fill", "black");
+
+            labels.exit().remove();
+            bars.exit().remove();
+            rows.exit().remove();
+        }
+
+        //Complete sorting for bar chart
+        function SortBars() {
+
+            if (sortingValCurrent != sortingValPrev) {
+
+                var rows = g.selectAll("g.row")
+                        .sort(compareCountriesNew);
+
+                yScale.domain(rows.data().map(function (d) {
+                    return d.name;
+                }));
+
+                var rows = g.selectAll("g.row")
+                var bars = rows.selectAll("rect")
+                var labels = rows.selectAll("text");
+
+                bars.data(function (d) {
+                    return [d];
+                })
+                        //BONUS////////////
+                        .transition()
+                        .delay(delayTime)
+                        .duration(durationTime)
+                        ///////////////////
+                        .attr("y", function (d) {
+                            return yScale(d.name) * (rows.data().length / maxDataSize);
+                        });
+
+                labels.data(function (d) {
+                    return [d];
+                })
+                        //BONUS////////////
+                        .transition()
+                        .delay(delayTime)
+                        .duration(durationTime)
+                        ///////////////////
+                        .attr("y", function (d) {
+                            return yScale(d.name) * (rows.data().length / maxDataSize) + padTextY;
+                        });
+
+                sortingValPrev = sortingValCurrent;
+            }
+        }
+
+        //Aggregate Data...based on year
+        function CalculateAggregateData() {
+            var aggregateData = d3.nest()           //Aggregated
+                    .key(function (d) {
+                        return d.continent
+                    })
+                    .rollup(function (d) {
+                        return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
+                            "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
+                            "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
+                    }).entries(restructuredData[yearIndex]);
+
+            aggregateData.forEach(function(d){      //Rename variables
+                d.name = d.key;
+                d.continent = d.key;
+                d.gdp = d.values.sumGDP;
+                d.life_expectancy = d.values.avgLE;
+                d.population = d.values.sumPOP;
+                d.year = minYear + yearIndex;
+            });
+            return aggregateData;
         }
 
         //Reformat Data since nested (multi-year)
@@ -394,28 +412,18 @@
             return restructuredData;
         }
 
-        //Aggregate Data...based on year
-        function CalculateAggregateData() {
-            var aggregateData = d3.nest()           //Aggregated
-                    .key(function (d) {
-                        return d.continent
-                    })
-                    .rollup(function (d) {
-                        return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
-                                "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
-                                "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
-                    }).entries(restructuredData[yearIndex]);
-
-            aggregateData.forEach(function(d){      //Rename variables
-                d.name = d.key;
-                d.continent = d.key;
-                d.gdp = d.values.sumGDP;
-                d.life_expectancy = d.values.avgLE;
-                d.population = d.values.sumPOP;
-                d.year = minYear + yearIndex;
-            });
-            return aggregateData;
+        //Sorting functions (New or cached sorting value)
+        function compareCountriesNew(a, b){
+            if (sortingValCurrent == "name") {          return d3.ascending(a["name"], b["name"]); }
+            if (sortingValCurrent == "population") {    return b["population"] - a["population"]; }
+            if (sortingValCurrent == "gdp") {           return b["gdp"] - a["gdp"]; }
         }
+        function compareCountriesCurrent(a, b){
+            if (sortingValPrev == "name") {             return d3.ascending(a["name"], b["name"]); }
+            if (sortingValPrev == "population") {       return b["population"] - a["population"]; }
+            if (sortingValPrev == "gdp") {              return b["gdp"] - a["gdp"]; }
+        }
+
 
     });
 
