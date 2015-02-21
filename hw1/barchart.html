@@ -3,7 +3,9 @@
 <meta charset="utf-8">
 <head>
     <title>CS171-HW1: BarChart</title>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+    <script src="src/d3.v3.min.js"></script>
+
     <style type="text/css">
         rect {
             fill:teal;
@@ -133,17 +135,18 @@
 </div>
 
 
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+<script src="src/d3.v3.min.js"></script>
 
 <script type="text/javascript">
 
     //Initialize Bar Chart
-    var margin = {top: 10, bottom: 10, left:150, right: 40};
+    var margin = {top: 40, bottom: 40, left:150, right: 40};
     var width = 1000 - margin.left - margin.right;
     var height = 2000 - margin.top - margin.bottom;
 
     var xScale = d3.scale.linear().range([0, width]);
-    var yScale = d3.scale.ordinal().rangeRoundBands([0, height], .8, 0);
+    var yScale = d3.scale.ordinal().rangeRoundBands([0, height],0.08);
 
     var svg = d3.select("body").append("svg")
             .attr("width", width+margin.left+margin.right)
@@ -151,6 +154,8 @@
 
     var g = svg.append("g")
             .attr("transform", "translate("+margin.left+","+margin.top+")");
+
+    var colors = d3.scale.category10();
 
     d3.json( "data/countries_1995_2012.json", function(error, data) {
 
@@ -172,42 +177,97 @@
         var basisData = restructuredData[yearIndex];                   //Data To Use
         var refinedData = restructuredData[yearIndex];                 //Filtered
 
+        var maxDataSize = basisData.length;
+
         //Initialize input vars
         var encodingVal = document.getElementById('rA1').title;
-        var sortingVal = document.getElementById('rC1').title;
+        var sortingValCurrent = document.getElementById('rC1').title;
+        var sortingValPrev;
         var showContAggregation = false;
-
-        //Use value instead of boolean**
-        var aggregationVal = document.getElementById('rB1').title;;
         var contFiltersFinal = [];
 
         //Apply Input Interaction
         var inputs = d3.selectAll("input");
         inputs.on("input", function(){
             yearIndex = timeSlider.value - timeSlider.min;
-            console.log(yearIndex);
+//            console.log(yearIndex);
             ApplyFilters();
-            EncodeBars();
             //SortBars();
+            EncodeBars();
+            SortBars(false);
+
         });
         inputs.on("change", function() {
             ApplyFilters();
-            EncodeBars();
             //SortBars();
+            EncodeBars();
+            SortBars(true);
+
         });
 
+        ApplyFilters();
+        //SortBars();
         EncodeBars();
+        SortBars();
+
+
+        function SortBars( value ) {
+
+            var rows = g.selectAll("g.row")
+                    .sort(function (a, b) {
+                        if (sortingValCurrent == "name") {
+                            return d3.ascending(a["name"], b["name"]);
+                        }
+                        if (sortingValCurrent == "population") {
+                            return b["population"] - a["population"];
+                        }
+                        if (sortingValCurrent == "gdp") {
+                            return b["gdp"] - a["gdp"];
+                        }
+                    });
+
+            //console.log( g.selectAll("g.row").data() );
+
+            yScale.domain(rows.data().map(function (d) {
+                return d.name;
+            }));
+
+            var rows = g.selectAll("g.row")
+            var bars = rows.selectAll("rect")
+            var labels = rows.selectAll("text");
+
+            bars.data( function(d){
+                return [d];
+            })
+                    .transition()
+                    .delay(value ? 100 : 0)
+                    .duration(value ? 1000 : 0)
+                    .attr("y", function (d) {
+                        return yScale(d.name) * (rows.data().length/maxDataSize);
+                    });
+
+            labels.data( function(d){
+                return [d];
+            })
+                    .transition()
+                    .delay(value ? 100 : 0)
+                    .duration(value ? 1000 : 0)
+                    .attr("y", function (d) {
+                        return yScale(d.name) * (rows.data().length/maxDataSize) + 8;
+                    });
+
+            refinedData = rows.data();
+
+        }
 
 
         function EncodeBars() {
+
             //Construct Bar Chart
             var max = d3.max(refinedData, function (d) {
                 return d[encodingVal];
             });
             var min = 0;
-
-            console.log(min);
-            console.log(max);
 
             xScale.domain([min, max]);
             yScale.domain(refinedData.map(function (d) {
@@ -222,26 +282,52 @@
                     .attr("class", "row");
 
             var bars = rows.selectAll("rect")
-                    .data( function(d){ return [d]; });
+                    .data( function(d){
+                        return [d];
+                    });
 
             bars.enter().append("rect");
 
             bars.attr("width", function (d) {
                         return xScale(d[encodingVal]);
                     })
-                    .attr("height", 9)
                     .attr("x", xScale(min))
+                    .attr("height", 8)//yScale.rangeBand()))
                     .attr("y", function (d) {
-                        return yScale(d.name);
+                        return yScale(d.name) * (rows.data().length/maxDataSize);
+                    })
+
+                    // Associate country color with Continent
+                    .style("fill", function(d){
+                        switch(d.continent){
+                            case "Americas":
+                                return colors(0);
+                                break;
+                            case "Africa":
+                                return colors(1);
+                                break;
+                            case "Asia":
+                                return colors(2);
+                                break;
+                            case "Europe":
+                                return colors(3);
+                                break;
+                            case "Oceania":
+                                return colors(4);
+                                break;
+                            default:
+                                return "black";
+                                break;
+                        }
                     });
+
 
             var labels = rows.selectAll("text")
                     .data( function(d){ return [d]; });
 
             labels.enter().append("text");
 
-            labels
-                    .text(function (d) {
+            labels.text(function (d) {
                         return d.name;
                     })
                     .attr("text-anchor", "end")
@@ -249,7 +335,7 @@
                         return xScale(min) - 5;
                     })
                     .attr("y", function (d) {
-                        return yScale(d.name) + 8;
+                        return yScale(d.name) * (rows.data().length/maxDataSize) + 8;
                     })
                     .attr("font-family", "sans-serif")
                     .attr("font-size", "11px")
@@ -258,6 +344,7 @@
             labels.exit().remove();
             bars.exit().remove();
             rows.exit().remove();
+
         }
 
 
@@ -270,7 +357,7 @@
                     contFilters.push(d3.select(this).attr("name"));
                 }
                 //Aggregation Filter
-                if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("id") == "r1") {
+                if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("id") == "rB1") {
                     showContAggregation = !d3.select(this).node().checked;
                 }
                 //Encoding Filter
@@ -279,16 +366,10 @@
                 }
                 //Sorting Filter
                 if (d3.select(this).attr("type") == "radio" && d3.select(this).attr("name") == "aggC"){
-                    sortingVal = (d3.select(this).node().checked) ? d3.select(this).attr("title") : sortingVal;
+                    sortingValCurrent = (d3.select(this).node().checked) ? d3.select(this).attr("title") : sortingValCurrent;
                 }
             });
             contFiltersFinal = contFilters;
-
-            console.log(encodingVal);
-            console.log(contFiltersFinal);
-            console.log(showContAggregation);
-            console.log(sortingVal);
-
 
             var aggregateData = CalculateAggregateData();
 
@@ -300,6 +381,7 @@
                 }
                 else {  return d;   }
             });
+
         }
 
         //Reformat Data since nested (multi-year)
@@ -354,6 +436,8 @@
         }
 
     });
+
+
 </script>
 </body>
 </html>
