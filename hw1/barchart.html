@@ -32,12 +32,6 @@
             display:none;
         }
 
-        input[type="checkbox"] + label {
-            /*color:#f2f2f2;*/
-            /*font-family:Arial, sans-serif;*/
-            /*font-size:14px;*/
-        }
-
         input[type="checkbox"] + label span {
             display:inline-block;
             width:19px;
@@ -54,12 +48,6 @@
 
         input[type="radio"] {
             display:none;
-        }
-
-        input[type="radio"] + label {
-            /*color:#f2f2f2;*/
-            /*font-family:Arial, sans-serif;*/
-            /*font-size:14px;*/
         }
 
         input[type="radio"] + label span {
@@ -99,20 +87,15 @@
 
 <div>
     <label class = "interactive" >Filter by: </label>
-    <input class="table-chk" type="checkbox" id="c1" name="Americas" value="Americas" title="Americas"
-           onchange=""></input>
+    <input class="table-chk" type="checkbox" id="c1" name="Americas" value="Americas" title="Americas" onchange="">
     <label for="c1" class="check-label" ><span></span>Americas</label>
-    <input class="table-chk" type="checkbox" id="c2" name="Africa" value="Africa" title="Africa"
-           onchange=""></input>
+    <input class="table-chk" type="checkbox" id="c2" name="Africa" value="Africa" title="Africa" onchange="">
     <label for="c2" class="check-label" ><span></span>Africa</label>
-    <input class="table-chk" type="checkbox" id="c3" name="Asia" value="Asia" title="Asia"
-           onchange=""></input>
+    <input class="table-chk" type="checkbox" id="c3" name="Asia" value="Asia" title="Asia" onchange="">
     <label for="c3" class="check-label" ><span></span>Asia</label>
-    <input class="table-chk" type="checkbox" id="c4" name="Europe" value="Europe" title="Europe"
-           onchange=""></input>
+    <input class="table-chk" type="checkbox" id="c4" name="Europe" value="Europe" title="Europe" onchange="">
     <label for="c4" class="check-label" ><span></span>Europe</label>
-    <input class="table-chk" type="checkbox" id="c5" name="Oceania" value="Oceania" title="Oceania"
-           onchange=""></input>
+    <input class="table-chk" type="checkbox" id="c5" name="Oceania" value="Oceania" title="Oceania" onchange="">
     <label for="c5" class="check-label" ><span></span>Oceania</label>
 </div>
 
@@ -140,14 +123,18 @@
 
 <script type="text/javascript">
 
-    //Initialize Bar Chart
+    //////////////////////////////////
+    //Initialize Bar Chart vars
+    //////////////////////////////////
     var margin = {top: 40, bottom: 40, left:150, right: 40};
     var width = 1000 - margin.left - margin.right;
     var height = 2000 - margin.top - margin.bottom;
 
+    //Scaling
     var xScale = d3.scale.linear().range([0, width]);
     var yScale = d3.scale.ordinal().rangeRoundBands([0, height],0.08);
 
+    //SVG
     var svg = d3.select("body").append("svg")
             .attr("width", width+margin.left+margin.right)
             .attr("height", height+margin.top+margin.bottom);
@@ -155,8 +142,23 @@
     var g = svg.append("g")
             .attr("transform", "translate("+margin.left+","+margin.top+")");
 
+    //Color pattern
     var colors = d3.scale.category10();
 
+    //Label Loc offset
+    var padTextX = 5;
+    var padTextY = 8;
+
+    //Bar Height
+    var barY = 8;
+
+    //Transitions
+    var delayTime = 100;
+    var durationTime = 1000;
+
+    //////////////////////////////////////
+    // Read In Data
+    //////////////////////////////////////
     d3.json( "data/countries_1995_2012.json", function(error, data) {
 
         //Calculate year range
@@ -177,12 +179,11 @@
         var basisData = restructuredData[yearIndex];                   //Data To Use
         var refinedData = restructuredData[yearIndex];                 //Filtered
 
-        var maxDataSize = basisData.length;
+        var maxDataSize = refinedData.length;
 
         //Initialize input vars
         var encodingVal = document.getElementById('rA1').title;
         var sortingValCurrent = document.getElementById('rC1').title;
-        var sortingValPrev;
         var showContAggregation = false;
         var contFiltersFinal = [];
 
@@ -190,28 +191,27 @@
         var inputs = d3.selectAll("input");
         inputs.on("input", function(){
             yearIndex = timeSlider.value - timeSlider.min;
-//            console.log(yearIndex);
+            console.log(true);
             ApplyFilters();
-            //SortBars();
             EncodeBars();
-            SortBars(false);
+            SortBars();
 
         });
         inputs.on("change", function() {
+            console.log("here");
             ApplyFilters();
-            //SortBars();
             EncodeBars();
-            SortBars(true);
+            SortBars();
 
         });
 
+        //Initialize Bar Chart
         ApplyFilters();
-        //SortBars();
         EncodeBars();
         SortBars();
 
-
-        function SortBars( value ) {
+        //Complete sorting for bar chart
+        function SortBars() {
 
             var rows = g.selectAll("g.row")
                     .sort(function (a, b) {
@@ -226,8 +226,6 @@
                         }
                     });
 
-            //console.log( g.selectAll("g.row").data() );
-
             yScale.domain(rows.data().map(function (d) {
                 return d.name;
             }));
@@ -240,8 +238,8 @@
                 return [d];
             })
                     .transition()
-                    .delay(value ? 100 : 0)
-                    .duration(value ? 1000 : 0)
+                    .delay(delayTime)
+                    .duration(durationTime)
                     .attr("y", function (d) {
                         return yScale(d.name) * (rows.data().length/maxDataSize);
                     });
@@ -250,17 +248,15 @@
                 return [d];
             })
                     .transition()
-                    .delay(value ? 100 : 0)
-                    .duration(value ? 1000 : 0)
+                    .delay(delayTime)
+                    .duration(durationTime)
                     .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize) + 8;
+                        return yScale(d.name) * (rows.data().length/maxDataSize) + padTextY;
                     });
-
-            refinedData = rows.data();
 
         }
 
-
+        //Create/update bars and labels
         function EncodeBars() {
 
             //Construct Bar Chart
@@ -292,32 +288,19 @@
                         return xScale(d[encodingVal]);
                     })
                     .attr("x", xScale(min))
-                    .attr("height", 8)//yScale.rangeBand()))
+                    .attr("height", barY)//Fixed height, unless use yScale.rangeBand()))
                     .attr("y", function (d) {
                         return yScale(d.name) * (rows.data().length/maxDataSize);
                     })
-
                     // Associate country color with Continent
                     .style("fill", function(d){
                         switch(d.continent){
-                            case "Americas":
-                                return colors(0);
-                                break;
-                            case "Africa":
-                                return colors(1);
-                                break;
-                            case "Asia":
-                                return colors(2);
-                                break;
-                            case "Europe":
-                                return colors(3);
-                                break;
-                            case "Oceania":
-                                return colors(4);
-                                break;
-                            default:
-                                return "black";
-                                break;
+                            case "Americas":    return colors(0);   break;
+                            case "Africa":      return colors(1);   break;
+                            case "Asia":        return colors(2);   break;
+                            case "Europe":      return colors(3);   break;
+                            case "Oceania":     return colors(4);   break;
+                            default:            return "black";     break;
                         }
                     });
 
@@ -331,11 +314,11 @@
                         return d.name;
                     })
                     .attr("text-anchor", "end")
-                    .attr("x", function (d, i) {
-                        return xScale(min) - 5;
+                    .attr("x", function () {
+                        return xScale(min) - padTextX;
                     })
                     .attr("y", function (d) {
-                        return yScale(d.name) * (rows.data().length/maxDataSize) + 8;
+                        return yScale(d.name) * (rows.data().length/maxDataSize) + padTextY;
                     })
                     .attr("font-family", "sans-serif")
                     .attr("font-size", "11px")
@@ -344,14 +327,12 @@
             labels.exit().remove();
             bars.exit().remove();
             rows.exit().remove();
-
         }
-
 
         //Update Data due to filters
         function ApplyFilters() {
             var contFilters = [];
-            inputs.each(function (d, i) {
+            inputs.each(function () {
                 //Continent Filter
                 if (d3.select(this).attr("type") == "checkbox" && d3.select(this).node().checked) {
                     contFilters.push(d3.select(this).attr("name"));
@@ -392,9 +373,11 @@
 
                     if (i==0) {
                         restructuredData[j] = new Array();
+                        var currentYear = data[i].years[j].year;
 
-                        minYear = (data[i].years[j].year < minYear) ? data[i].years[j].year : minYear;
-                        maxYear = (data[i].years[j].year > maxYear) ? data[i].years[j].year : maxYear;
+                        //Update min/max years in data
+                        minYear = (currentYear < minYear) ? currentYear : minYear;
+                        maxYear = (currentYear > maxYear) ? currentYear : maxYear;
                     }
 
                     restructuredData[j].push(
@@ -404,7 +387,7 @@
                                 'gdp': data[i].years[j].gdp,
                                 'life_expectancy': data[i].years[j].life_expectancy,
                                 'population': data[i].years[j].population,
-                                'year': data[i].years[j].year
+                                'year': currentYear
                             });
                 }
             }
@@ -418,7 +401,6 @@
                         return d.continent
                     })
                     .rollup(function (d) {
-
                         return {"sumGDP" : d3.sum( d, function(g){  return g.gdp; }),
                                 "avgLE"  : d3.mean(d, function(g){  return g.life_expectancy; }),
                                 "sumPOP" : d3.sum( d, function(g){  return g.population; }) }
@@ -436,7 +418,6 @@
         }
 
     });
-
 
 </script>
 </body>
