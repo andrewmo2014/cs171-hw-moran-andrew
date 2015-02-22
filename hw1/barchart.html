@@ -3,8 +3,8 @@
 <meta charset="utf-8">
 <head>
     <title>CS171-HW1: BarChart</title>
-    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
-    <script src="src/d3.v3.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <!--<script src="src/d3.v3.min.js"></script>-->
 
     <style type="text/css">
         rect {
@@ -13,7 +13,7 @@
         }
 
         .slider-width{
-            width: 500px;
+            width: 440px;
             vertical-align: top;
             position: relative;
             top: -3px;
@@ -118,8 +118,8 @@
 </div>
 
 
-<!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
-<script src="src/d3.v3.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<!--<script src="src/d3.v3.min.js"></script>-->
 
 <script type="text/javascript">
 
@@ -203,9 +203,9 @@
         });
 
         //Initialize Bar Chart
-        ApplyFilters();
-        EncodeBars();
-        SortBars();
+        ApplyFilters();         //Get Updated data from state if filters
+        EncodeBars();           //Update visualization appropriately
+        SortBars();             //Do correct sorting
 
         //Update Data due to filters
         function ApplyFilters() {
@@ -241,6 +241,8 @@
             });
 
             //Use current sorting before applying new sorting
+            //This was useful for smooth transitioning from currently sorted data
+            //to newly chosen data
             refinedData.sort(compareCountriesCurrent);
 
         }
