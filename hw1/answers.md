@@ -1,14 +1,13 @@
 ## Andrew Moran
 ## 2/21/2015
 ## CS171 HW1
-
+##
 ############################
 ## Questions
 ############################
+##
 ## 1.1
-# Looking at the page containing the table, what are the differences between the DOM as
-# shown by the DOM inspector and the HTML source code? Why would you use the DOM
-# inspector? When is the HTML source useful?
+# Looking at the page containing the table, what are the differences between the DOM as shown by the DOM inspector and the HTML source code? Why would you use the DOM inspector? When is the HTML source useful?
 
 The DOM allows you to dynamically view the output of your code in the browser, with
 fully-featured capabilities such as highlighting, expanding and/or collapsing nested
@@ -19,16 +18,14 @@ which you want to have in the DOM.  This is initially hard-coded and is good for
 binding.  When debugging, it is good to look at teh source code to make sure it is
 properly displayed in the browser.
 
-## 1.2 Below we have partially reproduced the first lines from the table's dataset.
-# What piece of software generates this table? Where are the original data stored?
+## 1.2 Below we have partially reproduced the first lines from the table's dataset. What piece of software generates this table? Where are the original data stored?
 
 D3 could be used to generate the table.  Often, web-based visualizations use
  Javascript with libraries such as jQuery to help create elements like a table.
  Data is originally stored in a JSON or CVS file.  In this case, it is in the
  countries_2012.json file.
 
-## 2.1 Would you filter other columns from the table the same way?
-# E.g. would you use checkboxes or any other HTML widget?
+## 2.1 Would you filter other columns from the table the same way? E.g. would you use checkboxes or any other HTML widget?
 
 Checkboxes are good for items that can be grouped in categories and have a limited
 number.  If we wanted to further splice the data into ranges, we could use checkboxes.
@@ -37,9 +34,7 @@ mutually exclusive items that are independent of each other.  Instead of a slide
   for the years, we could number the years as radio buttons and select which one we
   want independently.
 
-## 3.1 Could you aggregate the table using other columns?
-# If you think yes, explain which ones and how you would group values.
-# Which HTML widgets would be appropriate?
+## 3.1 Could you aggregate the table using other columns? If you think yes, explain which ones and how you would group values. Which HTML widgets would be appropriate?
 
 We could aggregate other columns, but we need to make sure it makes sense and not too
 overwhelming.  For example, we could aggregate by year if you wanted to compare
@@ -53,8 +48,7 @@ Years holds not only each country's GDP, life expectancy, population. But also 1
  top 10 trade partners (with their associative respective total number of exports
  and country ID from 1995 through 2012.
 
-## 5.1 What are the pros and cons of using HTML vs. SVG? Give some examples in
-# the context of creating visualizations.
+## 5.1 What are the pros and cons of using HTML vs. SVG? Give some examples in the context of creating visualizations.
 
 HTML has many good properties.  It has native text-wrapping and supported by many
 browsers (easy to update), where as SVG isn't necessarily supported on out-of-date
@@ -66,9 +60,7 @@ be exported to Photoshop and/or Illustrator to additional customize.  Also, as w
 a hands on experience, SVGs can use libraries such as D3 that can enhance visualization
 in a more streamlined way as compared to hard-coding with javascript.
 
-## 7.1 Give an example of a situation where visualization is appropriate, following the
-# arguments discussed in lecture and in the textbook (the example cannot be the same as
-# mentioned in either lecture or textbook).
+## 7.1 Give an example of a situation where visualization is appropriate, following the arguments discussed in lecture and in the textbook (the example cannot be the same as mentioned in either lecture or textbook).
 Visualization is appropriate for two main things - communication and exploration. It is
 not appropriate when you just have a single question or answer (e.g how many books can
 you carry?).  A good example of visualization is to view stock prizes of a company.  We
