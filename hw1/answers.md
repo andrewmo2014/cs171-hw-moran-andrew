@@ -6,8 +6,7 @@
 ## Questions
 ############################
 ##
-## 1.1
-# Looking at the page containing the table, what are the differences between the DOM as shown by the DOM inspector and the HTML source code? Why would you use the DOM inspector? When is the HTML source useful?
+## 1.1 Looking at the page containing the table, what are the differences between the DOM as shown by the DOM inspector and the HTML source code? Why would you use the DOM inspector? When is the HTML source useful?
 
 The DOM allows you to dynamically view the output of your code in the browser, with
 fully-featured capabilities such as highlighting, expanding and/or collapsing nested
