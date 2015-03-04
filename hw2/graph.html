@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Homework 2 Graph</title>
+<style>
+    .link {
+        stroke: gray;
+        stroke-width: .8px;
+    }
+
+    .circ {
+        fill: white;
+        stroke: #000;
+        stroke-width: .9px;
+    }
+
+    .circ:hover {
+        fill: black;
+    }
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<form>
+    Layout:
+    <label><input type="radio" name="layout" value="rankings" checked> Rankings</label>
+    <label><input type="radio" name="layout" value="scatterplot" > Scatterplot</label>
+    <label><input type="radio" name="layout" value="circular"> Circular</label>
+    <label><input type="radio" name="layout" value="grouped"> Grouped</label>
+</form>
+<form>
+    Spacing:
+    <select id="selectType" onchange="" name="selectType">
+        <option value="equal" selected="selected">Equal</option>
+        <option value="linear">Linear</option>
+    </select>
+</form>
+<form>
+    Ranking:
+    <select id="selectAttr" onchange="" name="selectAttr">
+        <option value="population" selected="selected">Population</option>
+        <option value="gdp">GDP</option>
+    </select>
+</form>
+<script>
+
+    //Layout Options
+    var margin = {top: 20, bottom: 10, left: 40, right: 40};
+    var width = 900 - margin.left - margin.right;
+    var height = 1600 - margin.top - margin.bottom;
+
+    //Label Loc offset
+    var padTextX = 8;
+    var padTextY = 4;
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width+margin.left+margin.right)
+            .attr("height", height+margin.top+margin.bottom);
+
+    var g = svg.append("g")
+            .attr("transform", "translate("+margin.left+","+margin.top+")");
+
+    //Data Holders
+    var graph = {nodes: [], links: []};
+    var restructuredData;
+
+    var yScale;
+    var selectTypeE = document.getElementById("selectType");
+    var typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
+    var selectAttrE = document.getElementById("selectAttr");
+    var attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+
+    console.log(attrVal);
+    console.log(typeVal);
+
+    //////////////////////////////////////
+    // Read In Data
+    //////////////////////////////////////
+    d3.json( "data/countries_1995_2012.json", function(error, data) {
+        //Calculate year range
+        minYear = Number.MAX_VALUE;
+        maxYear = Number.MIN_VALUE;
+
+        restructuredData = CalculateRestructuredData(data);     //New Data
+        graph.nodes = restructuredData[maxYear-minYear];        //Set Nodes
+
+        UpdateFilters();
+        AssociateData();
+        SortGraph();
+    });
+
+    //Apply Input Interaction
+    var inputs = d3.selectAll("select");
+    inputs.on("change", function() {
+        UpdateFilters();
+        SortGraph();
+    });
+
+    //Update Data due to filters
+    function UpdateFilters() {
+        typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
+        attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+        UpdateVerticalScale();
+    }
+
+    function UpdateVerticalScale(){
+
+        graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+
+        switch (typeVal){
+            case 'equal':
+                yScale = d3.scale.ordinal().rangeRoundBands([0, height],.08, 0.9);
+                yScale.domain(graph.nodes.map(function (d) { return d.name; }));
+                break;
+            case 'linear':
+                var max = d3.max(graph.nodes, function (d) { return d[attrVal]; });
+                var min = d3.min(graph.nodes, function (d) { return d[attrVal]; });
+                yScale = d3.scale.linear().domain([min, max]).range([height, 0]);
+                break;
+            default:
+                break;
+        }
+    }
+
+    function SortGraph(){
+
+        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cy", function (d) {
+                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
+                });
+
+        labels.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("y", function (d) {
+                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY;
+                });
+    }
+
+    function AssociateData(){
+
+        //Build Graph
+        var nodes = g.selectAll("g.node")
+                .data(graph.nodes);
+
+        nodes.enter()
+                .append("g").attr("class", "node")
+
+        var circs = nodes.selectAll("circle")
+                .data( function(d){ return [d]; });
+
+        circs.enter()
+                .append("circle")
+                .attr("class", "circ");
+
+        circs.attr("r", 6)
+                .attr("cx", function(d,i){
+                    return width/2;
+                })
+                .attr("cy", function(d,i){
+                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
+                });
+
+        var labels = nodes.selectAll("text")
+                .data( function(d){ return [d]; });
+
+        labels.enter()
+                .append("text");
+
+        labels.text(function (d) {
+            return d.name;
+        })
+                .attr("text-anchor", "left")
+                .attr("x", function () {
+                    return width/2 + padTextX;
+                })
+                .attr("y", function (d) {
+                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY;
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black");
+
+        labels.exit().remove();
+        circs.exit().remove();
+        nodes.exit().remove();
+    }
+
+    //Reformat Data since nested (multi-year)
+    function CalculateRestructuredData(data) {
+        var restructuredData = [];
+        for (var i = 0; i < data.length; i++) {
+            for (var j = 0; j < data[i].years.length; j++) {
+
+                if (i==0) {
+                    restructuredData[j] = new Array();
+                    var currentYear = data[i].years[j].year;
+
+                    //Update min/max years in data
+                    minYear = (currentYear < minYear) ? currentYear : minYear;
+                    maxYear = (currentYear > maxYear) ? currentYear : maxYear;
+                }
+
+                restructuredData[j].push(
+                        {
+                            'name': data[i].name,
+                            'continent': data[i].continent,
+                            'gdp': data[i].years[j].gdp,
+                            'life_expectancy': data[i].years[j].life_expectancy,
+                            'population': data[i].years[j].population,
+                            'year': currentYear
+                        });
+            }
+        }
+        return restructuredData;
+    }
+
+</script>
+</body>
+</html>
