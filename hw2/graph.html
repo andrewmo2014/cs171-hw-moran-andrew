@@ -19,30 +19,68 @@
 
 </style>
 <body>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<form>
+<!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+<script src="src/d3.v3.min.js"></script>
+
+<form onchange="showOptions(this);">
     Layout:
     <label><input type="radio" name="layout" value="rankings" checked> Rankings</label>
     <label><input type="radio" name="layout" value="scatterplot" > Scatterplot</label>
     <label><input type="radio" name="layout" value="circular"> Circular</label>
     <label><input type="radio" name="layout" value="grouped"> Grouped</label>
 </form>
-<form>
-    Spacing:
-    <select id="selectType" onchange="" name="selectType">
-        <option value="equal" selected="selected">Equal</option>
-        <option value="linear">Linear</option>
-    </select>
-</form>
-<form>
-    Ranking:
-    <select id="selectAttr" onchange="" name="selectAttr">
-        <option value="population" selected="selected">Population</option>
-        <option value="gdp">GDP</option>
-        <option value="life_expectancy">Life Expectancy</option>
-    </select>
-</form>
+<div id="rankingOpts" style="display:block;">
+    <form>
+        Spacing:
+        <select id="selectType" onchange="" name="selectType">
+            <option value="equal" selected="selected">Equal</option>
+            <option value="linear">Linear</option>
+        </select>
+    </form>
+    <form>
+        Ranking:
+        <select id="selectAttr" onchange="" name="selectAttr">
+            <option value="population" selected="selected">Population</option>
+            <option value="gdp">GDP</option>
+            <option value="life_expectancy">Life Expectancy</option>
+        </select>
+    </form>
+</div>
+
+<div id="scatterOpts" style="display:none;">
+    <form>
+        Scatter:
+        <select id="selectScatter" onchange="" name="selectScatter">
+            <option value="scatter1a" selected="selected">Population vs. GDP</option>
+            <option value="scatter1b">GDP vs. Population</option>
+            <option value="scatter2a">Latitude vs. Longitude</option>
+            <option value="scatter2b">Longitude vs. Latitude</option>
+        </select>
+    </form>
+</div>
+
 <script>
+
+    //Show Options Div
+    function showOptions(selection)
+    {
+        var radios = d3.selectAll("input");
+        radios.each(function () {
+            var val = d3.select(this).node().checked;
+            if (d3.select(this).attr("value") == "rankings") {
+                document.getElementById("rankingOpts").style.display = (val) ? "block" : 'none';
+                if(val){ height = 1600 - margin.top - margin.bottom; }
+            }
+            if (d3.select(this).attr("value") == "scatterplot") {
+                document.getElementById("scatterOpts").style.display = (val) ? "block" : 'none';
+                if(val){ height =650 - margin.top - margin.bottom; }
+            }
+        });
+        svg.attr("height", height+margin.top+margin.bottom);
+
+        UpdateFilters();
+        UpdateGraph();
+    }
 
     //Layout Options
     var margin = {top: 20, bottom: 10, left: 40, right: 40};
@@ -65,13 +103,21 @@
     var restructuredData;
 
     var yScale;
+    var xScatterScale;
+    var yScatterScale;
+    var xAxis;
+    var yAxis;
+
     var selectTypeE = document.getElementById("selectType");
     var typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
     var selectAttrE = document.getElementById("selectAttr");
     var attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+    var selectScatterE = document.getElementById("selectScatter");
+    var scatterVal = selectScatterE.options[selectAttrE.selectedIndex].value;
 
     console.log(attrVal);
     console.log(typeVal);
+    console.log(scatterVal);
 
     //////////////////////////////////////
     // Read In Data
@@ -86,20 +132,37 @@
 
         UpdateFilters();
         AssociateData();
-        SortGraph();
+        UpdateGraph();
+
     });
+
+
+    function UpdateGraph(){
+        var radios = d3.selectAll("input");
+        radios.each(function () {
+            if (d3.select(this).attr("value") == "rankings" && d3.select(this).node().checked) {
+                SortGraph();
+            }
+            if (d3.select(this).attr("value") == "scatterplot" && d3.select(this).node().checked) {
+                CompleteScatter();
+            }
+        });
+    }
+
 
     //Apply Input Interaction
     var inputs = d3.selectAll("select");
     inputs.on("change", function() {
         UpdateFilters();
-        SortGraph();
+        UpdateGraph();
+
     });
 
     //Update Data due to filters
     function UpdateFilters() {
         typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
         attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+        scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
         UpdateVerticalScale();
     }
 
@@ -107,6 +170,7 @@
 
         graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
 
+        //Vertical Layout
         switch (typeVal){
             case 'equal':
                 yScale = d3.scale.ordinal().rangeRoundBands([0, height],.08, 0.9);
@@ -120,6 +184,35 @@
             default:
                 break;
         }
+
+        //Scatter Layout
+        switch (scatterVal){
+            case 'scatter1a':
+                xAxis = 'population';
+                yAxis = 'gdp';
+                break;
+            case 'scatter1b':
+                xAxis = 'gdp';
+                yAxis = 'population';
+                break;
+            case 'scatter2a':
+                xAxis = 'latitude';
+                yAxis = 'longitude';
+                break;
+            case 'scatter2b':
+                xAxis = 'longitude';
+                yAxis = 'latitude';
+                break;
+            default:
+                break;
+        }
+
+        var maxX = d3.max(graph.nodes, function (d) { return d[xAxis]; });
+        var minX = d3.min(graph.nodes, function (d) { return d[xAxis]; });
+        xScatterScale = d3.scale.linear().domain([minX, maxX]).range([0, width]);
+        var maxY = d3.max(graph.nodes, function (d) { return d[yAxis]; });
+        var minY = d3.min(graph.nodes, function (d) { return d[yAxis]; });
+        yScatterScale = d3.scale.linear().domain([minY, maxY]).range([height, 0]);
     }
 
     function SortGraph(){
@@ -134,6 +227,9 @@
                 .transition()
                 .delay(100)
                 .duration(1000)
+                .attr("cx", function(d,i){
+                    return width/2;
+                })
                 .attr("cy", function (d) {
                     return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
                 });
@@ -144,6 +240,9 @@
                 .transition()
                 .delay(100)
                 .duration(1000)
+                .attr("x", function () {
+                    return width/2 + padTextX;
+                })
                 .attr("y", function (d) {
                     return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY;
                 });
@@ -198,6 +297,40 @@
         nodes.exit().remove();
     }
 
+
+    function CompleteScatter(){
+        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) {
+                    return xScatterScale(d[xAxis]);
+                })
+                .attr("cy", function (d) {
+                    return yScatterScale(d[yAxis]);
+                })
+
+        labels.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) {
+                    return xScatterScale(d[xAxis]) + padTextX;
+                })
+                .attr("y", function (d) {
+                    return yScatterScale(d[yAxis]) + padTextY;
+                });
+    }
+
+
     //Reformat Data since nested (multi-year)
     function CalculateRestructuredData(data) {
         var restructuredData = [];
@@ -220,7 +353,9 @@
                             'gdp': data[i].years[j].gdp,
                             'life_expectancy': data[i].years[j].life_expectancy,
                             'population': data[i].years[j].population,
-                            'year': currentYear
+                            'year': currentYear,
+                            'longitude': data[i].longitude,
+                            'latitude':data[i].latitude
                         });
             }
         }
