@@ -59,6 +59,16 @@
     </form>
 </div>
 
+<div id="circularOpts" style="display:none;">
+    <form>
+        Sorting:
+        <select id="selectCircular" onchange="" name="selectCircular">
+            <option value="population" selected="selected">Population</option>
+            <option value="gdp">GDP</option>
+        </select>
+    </form>
+</div>
+
 <script>
 
     //Show Options Div
@@ -73,7 +83,11 @@
             }
             if (d3.select(this).attr("value") == "scatterplot") {
                 document.getElementById("scatterOpts").style.display = (val) ? "block" : 'none';
-                if(val){ height =650 - margin.top - margin.bottom; }
+                if(val){ height = 650 - margin.top - margin.bottom; }
+            }
+            if (d3.select(this).attr("value") == "circular") {
+                document.getElementById("circularOpts").style.display = (val) ? "block" : 'none';
+                if(val){ height = 650 - margin.top - margin.bottom; }
             }
         });
         svg.attr("height", height+margin.top+margin.bottom);
@@ -113,11 +127,9 @@
     var selectAttrE = document.getElementById("selectAttr");
     var attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
     var selectScatterE = document.getElementById("selectScatter");
-    var scatterVal = selectScatterE.options[selectAttrE.selectedIndex].value;
-
-    console.log(attrVal);
-    console.log(typeVal);
-    console.log(scatterVal);
+    var scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
+    var selectCircularE = document.getElementById("selectCircular");
+    var circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
 
     //////////////////////////////////////
     // Read In Data
@@ -131,7 +143,7 @@
         graph.nodes = restructuredData[maxYear-minYear];        //Set Nodes
 
         UpdateFilters();
-        AssociateData();
+        InitializeVerticalLayout();
         UpdateGraph();
 
     });
@@ -141,10 +153,13 @@
         var radios = d3.selectAll("input");
         radios.each(function () {
             if (d3.select(this).attr("value") == "rankings" && d3.select(this).node().checked) {
-                SortGraph();
+                CompleteVertical();
             }
             if (d3.select(this).attr("value") == "scatterplot" && d3.select(this).node().checked) {
                 CompleteScatter();
+            }
+            if (d3.select(this).attr("value") == "circular" && d3.select(this).node().checked) {
+                CompleteCircular();
             }
         });
     }
@@ -163,6 +178,7 @@
         typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
         attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
         scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
+        circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
         UpdateVerticalScale();
     }
 
@@ -215,7 +231,7 @@
         yScatterScale = d3.scale.linear().domain([minY, maxY]).range([height, 0]);
     }
 
-    function SortGraph(){
+    function CompleteVertical(){
 
         var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
         var circs = nodes.selectAll("circle");
@@ -248,7 +264,7 @@
                 });
     }
 
-    function AssociateData(){
+    function InitializeVerticalLayout(){
 
         //Build Graph
         var nodes = g.selectAll("g.node")
@@ -327,6 +343,64 @@
                 })
                 .attr("y", function (d) {
                     return yScatterScale(d[yAxis]) + padTextY;
+                });
+    }
+
+
+    function CompleteCircular() {
+
+        var r = Math.min(height, width)/1.25;
+
+        var arc = d3.svg.arc()
+                .outerRadius(r);
+
+        var pie = d3.layout.pie()
+                .sort(function(a, b) { return b[circularVal] - a[circularVal];}) // Sorting by categories
+                .value(function(d, i) {
+                    return 1;  // We want an equal pie share/slice for each point
+                });
+
+        var pieData = pie(graph.nodes).map(function(d, i) {
+
+            // Needed to caclulate the centroid
+            d.innerRadius = 0;
+            d.outerRadius = r;
+
+            // Building the data object we are going to return
+            d.data.x = arc.centroid(d)[0]+width/2;
+            d.data.y = arc.centroid(d)[1]+height/2;
+
+            return d.data;
+        });
+
+        var nodes = g.selectAll("g.node").data(pieData);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) {
+                    return d.x;
+                })
+                .attr("cy", function (d) {
+                    return d.y;
+                })
+
+        labels.data(function (d) {
+            return [d];
+        })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) {
+                    return d.x + padTextX;
+                })
+                .attr("y", function (d) {
+                    return d.y + padTextY;
                 });
     }
 
