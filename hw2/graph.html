@@ -27,7 +27,7 @@
     <label><input type="radio" name="layout" value="rankings" checked> Rankings</label>
     <label><input type="radio" name="layout" value="scatterplot" > Scatterplot</label>
     <label><input type="radio" name="layout" value="circular"> Circular</label>
-    <label><input type="radio" name="layout" value="force"> Grouped</label>
+    <label><input type="radio" name="layout" value="force"> Force</label>
 </form>
 <div id="rankingOpts" style="display:block;">
     <form>
@@ -412,8 +412,6 @@
             default:
                 break;
         }
-
-
     }
 
     //////////////////////////////////////
@@ -530,53 +528,6 @@
         force.stop();
 
         UpdateNodesByCircle();
-
-        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) { return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) { return d.x; })
-                .attr("cy", function (d) { return d.y; });
-
-        labels.data(function (d) { return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function (d) { return d.x + padTextX; })
-                .attr("y", function (d) { return d.y + padTextY; });
-    }
-
-    //Part 3: Circular-Grouped
-    function CompleteCircularGrouped() {
-
-        force.stop();
-        InitializePieLayout(1.25);
-
-        rContinentScale = pie(continentListing).map(function (d, i) {
-
-            // Needed to caclulate the centroid
-            d.innerRadius = 0;
-            d.outerRadius = r;
-
-            // Building the data object we are going to return
-            d.x = arc.centroid(d)[0] + width / 2;
-            d.y = arc.centroid(d)[1] + height / 2;
-
-            return d;
-        });
-
-        graph.nodes.forEach(function (o, i) {
-            for (var i = 0; i < rContinentScale.length; i++) {
-                if (rContinentScale[i].data == o.continent) {
-                    o.x += (rContinentScale[i].x - o.x) * k;
-                    o.y += (rContinentScale[i].y - o.y) * k;
-                }
-            }
-        });
 
         var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
         var circs = nodes.selectAll("circle");
