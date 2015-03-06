@@ -61,6 +61,13 @@
 
 <div id="circularOpts" style="display:none;">
     <form>
+        Continent Grouping:
+        <select id="selectCircularGrouping" onchange="" name="selectCircularGrouping">
+            <option value="Off" selected="selected">OFF</option>
+            <option value="On">ON</option>
+        </select>
+    </form>
+    <form>
         Sorting:
         <select id="selectCircular" onchange="" name="selectCircular">
             <option value="population" selected="selected">Population</option>
@@ -130,6 +137,8 @@
     var scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
     var selectCircularE = document.getElementById("selectCircular");
     var circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
+    var selectCircularGroupingE = document.getElementById("selectCircularGrouping");
+    var circularGroupingVal = selectCircularGroupingE.options[selectCircularGroupingE.selectedIndex].value;
     var selectForceE = document.getElementById("selectForce");
     var forceVal = selectForceE.options[selectForceE.selectedIndex].value;
 
@@ -256,6 +265,7 @@
         attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
         scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
         circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
+        circularGroupingVal = selectCircularGroupingE.options[selectCircularGroupingE.selectedIndex].value;
         forceVal = selectForceE.options[selectForceE.selectedIndex].value;
         UpdateVerticalScale();
     }
@@ -313,7 +323,7 @@
                 });
                 break;
             case 'circular':
-                InitializePieLayout();
+                InitializePieLayout(1.25);
 
                 rContinentScale = pie(continentListing).map(function (d, i) {
 
@@ -343,11 +353,74 @@
         }
     }
 
+    function UpdateNodesByCircle() {
+        //Circle Layout
+        switch (circularGroupingVal) {
+            case 'Off':
+                InitializePieLayout(1.25);
+                pie(graph.nodes).map(function(d, i) {
+
+                    // Needed to caclulate the centroid
+                    d.innerRadius = 0;
+                    d.outerRadius = r;
+
+                    // Building the data object we are going to return
+                    d.data.x = arc.centroid(d)[0]+width/2;
+                    d.data.y = arc.centroid(d)[1]+height/2;
+
+                    return d.data;
+                });
+                break;
+            case 'On':
+                InitializePieLayout(1.5);
+                rContinentScale = pie(continentListing).map(function (d, i) {
+
+                    // Needed to caclulate the centroid
+                    d.innerRadius = 0;
+                    d.outerRadius = r;
+
+                    // Building the data object we are going to return
+                    d.x = arc.centroid(d)[0] + width / 2;
+                    d.y = arc.centroid(d)[1] + height / 2;
+
+                    return d;
+                });
+
+                for (var z=0; z<rContinentScale.length; z++) {
+
+                    var currentContinentData = graph.nodes.filter(function (c) {
+                        if (c.continent == rContinentScale[z].data) {
+                            return c;
+                        }
+                    });
+
+                    InitializePieLayout(3.75);
+                    pie(currentContinentData).map(function (d, i) {
+
+                        // Needed to caclulate the centroid
+                        d.innerRadius = 0;
+                        d.outerRadius = r;
+
+                        // Building the data object we are going to return
+                        d.data.x = arc.centroid(d)[0] + rContinentScale[z].x;
+                        d.data.y = arc.centroid(d)[1] + rContinentScale[z].y;
+
+                        return d.data;
+                    });
+                }
+                break;
+            default:
+                break;
+        }
+
+
+    }
+
     //////////////////////////////////////
     // Graph Initialize
     //////////////////////////////////////
-    function InitializePieLayout(){
-        r = Math.min(height, width)/1.25;
+    function InitializePieLayout(rFactor){
+        r = Math.min(height, width)/rFactor;
 
         arc = d3.svg.arc()
                 .outerRadius(r);
@@ -455,22 +528,57 @@
     function CompleteCircular() {
 
         force.stop();
-        InitializePieLayout();
 
-        var pieData = pie(graph.nodes).map(function(d, i) {
+        UpdateNodesByCircle();
+
+        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+        labels.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) { return d.x + padTextX; })
+                .attr("y", function (d) { return d.y + padTextY; });
+    }
+
+    //Part 3: Circular-Grouped
+    function CompleteCircularGrouped() {
+
+        force.stop();
+        InitializePieLayout(1.25);
+
+        rContinentScale = pie(continentListing).map(function (d, i) {
 
             // Needed to caclulate the centroid
             d.innerRadius = 0;
             d.outerRadius = r;
 
             // Building the data object we are going to return
-            d.data.x = arc.centroid(d)[0]+width/2;
-            d.data.y = arc.centroid(d)[1]+height/2;
+            d.x = arc.centroid(d)[0] + width / 2;
+            d.y = arc.centroid(d)[1] + height / 2;
 
-            return d.data;
+            return d;
         });
 
-        var nodes = g.selectAll("g.node").data(pieData);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        graph.nodes.forEach(function (o, i) {
+            for (var i = 0; i < rContinentScale.length; i++) {
+                if (rContinentScale[i].data == o.continent) {
+                    o.x += (rContinentScale[i].x - o.x) * k;
+                    o.y += (rContinentScale[i].y - o.y) * k;
+                }
+            }
+        });
+
+        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
         var circs = nodes.selectAll("circle");
         var labels = nodes.selectAll("text");
 
