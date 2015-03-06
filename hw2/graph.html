@@ -27,7 +27,7 @@
     <label><input type="radio" name="layout" value="rankings" checked> Rankings</label>
     <label><input type="radio" name="layout" value="scatterplot" > Scatterplot</label>
     <label><input type="radio" name="layout" value="circular"> Circular</label>
-    <label><input type="radio" name="layout" value="grouped"> Grouped</label>
+    <label><input type="radio" name="layout" value="force"> Grouped</label>
 </form>
 <div id="rankingOpts" style="display:block;">
     <form>
@@ -69,9 +69,23 @@
     </form>
 </div>
 
+<div id="forceOpts" style="display:none;">
+    <form>
+        Continent Grouping:
+        <select id="selectForce" onchange="" name="selectForce">
+            <option value="none" selected="selected">None</option>
+            <option value="horizontal">Horizontal</option>
+            <option value="circular">Circular</option>
+        </select>
+    </form>
+</div>
+
 <script>
 
-    //Show Options Div
+    //////////////////////////////////////
+    // Widget Functionality
+    //////////////////////////////////////
+    //Hide/Show divs
     function showOptions(selection)
     {
         var radios = d3.selectAll("input");
@@ -89,6 +103,10 @@
                 document.getElementById("circularOpts").style.display = (val) ? "block" : 'none';
                 if(val){ height = 650 - margin.top - margin.bottom; }
             }
+            if (d3.select(this).attr("value") == "force") {
+                document.getElementById("forceOpts").style.display = (val) ? "block" : 'none';
+                if(val){ height = 650 - margin.top - margin.bottom; }
+            }
         });
         svg.attr("height", height+margin.top+margin.bottom);
 
@@ -96,15 +114,38 @@
         UpdateGraph();
     }
 
+    //Apply Input Interaction
+    var inputs = d3.selectAll("select");
+    inputs.on("change", function() {
+        UpdateFilters();
+        UpdateGraph();
+    });
+
+    //Current Selection
+    var selectTypeE = document.getElementById("selectType");
+    var typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
+    var selectAttrE = document.getElementById("selectAttr");
+    var attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+    var selectScatterE = document.getElementById("selectScatter");
+    var scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
+    var selectCircularE = document.getElementById("selectCircular");
+    var circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
+    var selectForceE = document.getElementById("selectForce");
+    var forceVal = selectForceE.options[selectForceE.selectedIndex].value;
+
+    //////////////////////////////////////
+    // Init Global Vars
+    //////////////////////////////////////
     //Layout Options
     var margin = {top: 20, bottom: 10, left: 40, right: 40};
-    var width = 900 - margin.left - margin.right;
+    var width = 1200 - margin.left - margin.right;
     var height = 1600 - margin.top - margin.bottom;
 
     //Label Loc offset
     var padTextX = 8;
     var padTextY = 4;
 
+    //Grouping Reference
     var svg = d3.select("body").append("svg")
             .attr("width", width+margin.left+margin.right)
             .attr("height", height+margin.top+margin.bottom);
@@ -115,21 +156,30 @@
     //Data Holders
     var graph = {nodes: [], links: []};
     var restructuredData;
+    var continentListing = ["Americas", "Africa", "Asia", "Europe", "Oceania"];
 
-    var yScale;
-    var xScatterScale;
-    var yScatterScale;
-    var xAxis;
-    var yAxis;
+    //Scaling
+    var yScale;             //Vertical
+    var xScatterScale;      //Scatter X
+    var yScatterScale;      //Scatter Y
+    var xAxis;              //Scatter X label
+    var yAxis;              //Scatter Y label
+    var rContinentScale;    //Continent Pie X,Y
+    var xContinentScale = d3.scale.ordinal().rangeRoundBands([0, width],.05);   //Continent Horizontal X
+    xContinentScale.domain(continentListing);
 
-    var selectTypeE = document.getElementById("selectType");
-    var typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
-    var selectAttrE = document.getElementById("selectAttr");
-    var attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
-    var selectScatterE = document.getElementById("selectScatter");
-    var scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
-    var selectCircularE = document.getElementById("selectCircular");
-    var circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
+
+    //////////////////////////////////////
+    // Graph Init layouts
+    //////////////////////////////////////
+    // Force layout
+    var force = d3.layout.force()
+            .charge(-50)
+            .linkDistance(10)
+            .on("tick", tick);
+    // Pie Layout
+    var r, arc, pie;
+
 
     //////////////////////////////////////
     // Read In Data
@@ -147,263 +197,6 @@
         UpdateGraph();
 
     });
-
-
-    function UpdateGraph(){
-        var radios = d3.selectAll("input");
-        radios.each(function () {
-            if (d3.select(this).attr("value") == "rankings" && d3.select(this).node().checked) {
-                CompleteVertical();
-            }
-            if (d3.select(this).attr("value") == "scatterplot" && d3.select(this).node().checked) {
-                CompleteScatter();
-            }
-            if (d3.select(this).attr("value") == "circular" && d3.select(this).node().checked) {
-                CompleteCircular();
-            }
-        });
-    }
-
-
-    //Apply Input Interaction
-    var inputs = d3.selectAll("select");
-    inputs.on("change", function() {
-        UpdateFilters();
-        UpdateGraph();
-
-    });
-
-    //Update Data due to filters
-    function UpdateFilters() {
-        typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
-        attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
-        scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
-        circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
-        UpdateVerticalScale();
-    }
-
-    function UpdateVerticalScale(){
-
-        graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-
-        //Vertical Layout
-        switch (typeVal){
-            case 'equal':
-                yScale = d3.scale.ordinal().rangeRoundBands([0, height],.08, 0.9);
-                yScale.domain(graph.nodes.map(function (d) { return d.name; }));
-                break;
-            case 'linear':
-                var max = d3.max(graph.nodes, function (d) { return d[attrVal]; });
-                var min = d3.min(graph.nodes, function (d) { return d[attrVal]; });
-                yScale = d3.scale.linear().domain([min, max]).range([height, 0]);
-                break;
-            default:
-                break;
-        }
-
-        //Scatter Layout
-        switch (scatterVal){
-            case 'scatter1a':
-                xAxis = 'population';
-                yAxis = 'gdp';
-                break;
-            case 'scatter1b':
-                xAxis = 'gdp';
-                yAxis = 'population';
-                break;
-            case 'scatter2a':
-                xAxis = 'latitude';
-                yAxis = 'longitude';
-                break;
-            case 'scatter2b':
-                xAxis = 'longitude';
-                yAxis = 'latitude';
-                break;
-            default:
-                break;
-        }
-
-        var maxX = d3.max(graph.nodes, function (d) { return d[xAxis]; });
-        var minX = d3.min(graph.nodes, function (d) { return d[xAxis]; });
-        xScatterScale = d3.scale.linear().domain([minX, maxX]).range([0, width]);
-        var maxY = d3.max(graph.nodes, function (d) { return d[yAxis]; });
-        var minY = d3.min(graph.nodes, function (d) { return d[yAxis]; });
-        yScatterScale = d3.scale.linear().domain([minY, maxY]).range([height, 0]);
-    }
-
-    function CompleteVertical(){
-
-        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function(d,i){
-                    return width/2;
-                })
-                .attr("cy", function (d) {
-                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
-                });
-
-        labels.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function () {
-                    return width/2 + padTextX;
-                })
-                .attr("y", function (d) {
-                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY;
-                });
-    }
-
-    function InitializeVerticalLayout(){
-
-        //Build Graph
-        var nodes = g.selectAll("g.node")
-                .data(graph.nodes);
-
-        nodes.enter()
-                .append("g").attr("class", "node")
-
-        var circs = nodes.selectAll("circle")
-                .data( function(d){ return [d]; });
-
-        circs.enter()
-                .append("circle")
-                .attr("class", "circ");
-
-        circs.attr("r", 6)
-                .attr("cx", function(d,i){
-                    return width/2;
-                })
-                .attr("cy", function(d,i){
-                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
-                });
-
-        var labels = nodes.selectAll("text")
-                .data( function(d){ return [d]; });
-
-        labels.enter()
-                .append("text");
-
-        labels.text(function (d) {
-            return d.name;
-        })
-                .attr("text-anchor", "left")
-                .attr("x", function () {
-                    return width/2 + padTextX;
-                })
-                .attr("y", function (d) {
-                    return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY;
-                })
-                .attr("font-family", "sans-serif")
-                .attr("font-size", "10px")
-                .attr("fill", "black");
-
-        labels.exit().remove();
-        circs.exit().remove();
-        nodes.exit().remove();
-    }
-
-
-    function CompleteScatter(){
-        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) {
-                    return xScatterScale(d[xAxis]);
-                })
-                .attr("cy", function (d) {
-                    return yScatterScale(d[yAxis]);
-                })
-
-        labels.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function (d) {
-                    return xScatterScale(d[xAxis]) + padTextX;
-                })
-                .attr("y", function (d) {
-                    return yScatterScale(d[yAxis]) + padTextY;
-                });
-    }
-
-
-    function CompleteCircular() {
-
-        var r = Math.min(height, width)/1.25;
-
-        var arc = d3.svg.arc()
-                .outerRadius(r);
-
-        var pie = d3.layout.pie()
-                .sort(function(a, b) { return b[circularVal] - a[circularVal];}) // Sorting by categories
-                .value(function(d, i) {
-                    return 1;  // We want an equal pie share/slice for each point
-                });
-
-        var pieData = pie(graph.nodes).map(function(d, i) {
-
-            // Needed to caclulate the centroid
-            d.innerRadius = 0;
-            d.outerRadius = r;
-
-            // Building the data object we are going to return
-            d.data.x = arc.centroid(d)[0]+width/2;
-            d.data.y = arc.centroid(d)[1]+height/2;
-
-            return d.data;
-        });
-
-        var nodes = g.selectAll("g.node").data(pieData);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) {
-                    return d.x;
-                })
-                .attr("cy", function (d) {
-                    return d.y;
-                })
-
-        labels.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function (d) {
-                    return d.x + padTextX;
-                })
-                .attr("y", function (d) {
-                    return d.y + padTextY;
-                });
-    }
-
 
     //Reformat Data since nested (multi-year)
     function CalculateRestructuredData(data) {
@@ -434,6 +227,293 @@
             }
         }
         return restructuredData;
+    }
+
+    //////////////////////////////////////
+    // Graph Functionality
+    //////////////////////////////////////
+    function UpdateGraph(){
+        var radios = d3.selectAll("input");
+        radios.each(function () {
+            if (d3.select(this).attr("value") == "rankings" && d3.select(this).node().checked) {
+                CompleteVertical();
+            }
+            if (d3.select(this).attr("value") == "scatterplot" && d3.select(this).node().checked) {
+                CompleteScatter();
+            }
+            if (d3.select(this).attr("value") == "circular" && d3.select(this).node().checked) {
+                CompleteCircular();
+            }
+            if (d3.select(this).attr("value") == "force" && d3.select(this).node().checked) {
+                CompleteForce();
+            }
+        });
+    }
+
+    //Update Data due to filters
+    function UpdateFilters() {
+        typeVal = selectTypeE.options[selectTypeE.selectedIndex].value;
+        attrVal = selectAttrE.options[selectAttrE.selectedIndex].value;
+        scatterVal = selectScatterE.options[selectScatterE.selectedIndex].value;
+        circularVal = selectCircularE.options[selectCircularE.selectedIndex].value;
+        forceVal = selectForceE.options[selectForceE.selectedIndex].value;
+        UpdateVerticalScale();
+    }
+
+    //////////////////////////////////////
+    // Graph Updates
+    //////////////////////////////////////
+    function UpdateVerticalScale(){
+
+        graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+
+        //Vertical Layout
+        switch (typeVal){
+            case 'equal':
+                yScale = d3.scale.ordinal().rangeRoundBands([0, height],.08, 0.9);
+                yScale.domain(graph.nodes.map(function (d) { return d.name; }));
+                break;
+            case 'linear':
+                var max = d3.max(graph.nodes, function (d) { return d[attrVal]; });
+                var min = d3.min(graph.nodes, function (d) { return d[attrVal]; });
+                yScale = d3.scale.linear().domain([min, max]).range([height, 0]);
+                break;
+            default:
+                break;
+        }
+
+        //Scatter Layout
+        switch (scatterVal){
+            case 'scatter1a':   xAxis = 'population';   yAxis = 'gdp';          break;
+            case 'scatter1b':   xAxis = 'gdp';          yAxis = 'population';   break;
+            case 'scatter2a':   xAxis = 'latitude';     yAxis = 'longitude';    break;
+            case 'scatter2b':   xAxis = 'longitude';    yAxis = 'latitude';     break;
+            default:
+                break;
+        }
+
+        var maxX = d3.max(graph.nodes, function (d) { return d[xAxis]; });
+        var minX = d3.min(graph.nodes, function (d) { return d[xAxis]; });
+        xScatterScale = d3.scale.linear().domain([minX, maxX]).range([0, width]);
+        var maxY = d3.max(graph.nodes, function (d) { return d[yAxis]; });
+        var minY = d3.min(graph.nodes, function (d) { return d[yAxis]; });
+        yScatterScale = d3.scale.linear().domain([minY, maxY]).range([height, 0]);
+
+    }
+
+    function UpdateNodesByForce(e) {
+
+        var k = .1 * e.alpha;
+
+        //Force Layout
+        switch (forceVal){
+            case 'horizontal':
+                graph.nodes.forEach(function (o, i) {
+                    o.x += (xContinentScale(o.continent) - o.x) * k;
+                });
+                break;
+            case 'circular':
+                InitializePieLayout();
+
+                rContinentScale = pie(continentListing).map(function (d, i) {
+
+                    // Needed to caclulate the centroid
+                    d.innerRadius = 0;
+                    d.outerRadius = r;
+
+                    // Building the data object we are going to return
+                    d.x = arc.centroid(d)[0] + width / 2;
+                    d.y = arc.centroid(d)[1] + height / 2;
+
+                    return d;
+                });
+
+                graph.nodes.forEach(function (o, i) {
+                    for (var i = 0; i < rContinentScale.length; i++) {
+                        if (rContinentScale[i].data == o.continent) {
+                            o.x += (rContinentScale[i].x - o.x) * k;
+                            o.y += (rContinentScale[i].y - o.y) * k;
+                        }
+                    }
+                });
+                break;
+            case 'none':
+            default:
+                break;
+        }
+    }
+
+    //////////////////////////////////////
+    // Graph Initialize
+    //////////////////////////////////////
+    function InitializePieLayout(){
+        r = Math.min(height, width)/1.25;
+
+        arc = d3.svg.arc()
+                .outerRadius(r);
+
+        pie = d3.layout.pie()
+                .sort(function(a, b) { return b[circularVal] - a[circularVal];}) // Sorting by categories
+                .value(function(d, i) {
+                    return 1;  // We want an equal pie share/slice for each point
+                });
+    }
+
+    function InitializeVerticalLayout(){
+
+        force.stop();
+
+        //Build Graph
+        var nodes = g.selectAll("g.node")
+                .data(graph.nodes);
+
+        nodes.enter()
+                .append("g").attr("class", "node")
+
+        var circs = nodes.selectAll("circle")
+                .data( function(d){ return [d]; });
+
+        circs.enter()
+                .append("circle")
+                .attr("class", "circ");
+
+        circs.attr("r", 6)
+                .attr("cx", function (d){ return width/2; })
+                .attr("cy", function (d){ return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]); });
+
+        var labels = nodes.selectAll("text")
+                .data( function(d){ return [d]; });
+
+        labels.enter()
+                .append("text");
+
+        labels.text(function (d) {  return d.name;  })
+                .attr("text-anchor", "left")
+                .attr("x", function (d) { return width/2 + padTextX;  })
+                .attr("y", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY; })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black");
+
+        labels.exit().remove();
+        circs.exit().remove();
+        nodes.exit().remove();
+    }
+
+    //////////////////////////////////////
+    // Graph Selection
+    //////////////////////////////////////
+    //Part 1: Rankings
+    function CompleteVertical(){
+
+        force.stop();
+
+        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) {   return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) { return width/2; })
+                .attr("cy", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]); });
+
+        labels.data(function (d) {  return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) { return width/2 + padTextX;  })
+                .attr("y", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY; });
+    }
+
+    //Part 1: Scatter
+    function CompleteScatter(){
+
+        force.stop();
+
+        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) { return xScatterScale(d[xAxis]); })
+                .attr("cy", function (d) { return yScatterScale(d[yAxis]); })
+
+        labels.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) { return xScatterScale(d[xAxis]) + padTextX; })
+                .attr("y", function (d) { return yScatterScale(d[yAxis]) + padTextY; });
+    }
+
+    //Part 2: Circular
+    function CompleteCircular() {
+
+        force.stop();
+        InitializePieLayout();
+
+        var pieData = pie(graph.nodes).map(function(d, i) {
+
+            // Needed to caclulate the centroid
+            d.innerRadius = 0;
+            d.outerRadius = r;
+
+            // Building the data object we are going to return
+            d.data.x = arc.centroid(d)[0]+width/2;
+            d.data.y = arc.centroid(d)[1]+height/2;
+
+            return d.data;
+        });
+
+        var nodes = g.selectAll("g.node").data(pieData);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        circs.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+        labels.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) { return d.x + padTextX; })
+                .attr("y", function (d) { return d.y + padTextY; });
+    }
+
+    //Part 2: Multi-Force
+    function CompleteForce() {
+
+        force.nodes(graph.nodes)
+                .links(graph.links)
+                .size([width, height])
+                .start();
+    }
+
+    //Apply Force tick
+    function tick(e) {
+
+        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        var circs = nodes.selectAll("circle");
+        var labels = nodes.selectAll("text");
+
+        UpdateNodesByForce(e);
+
+        circs.data(function (d) { return [d]; })
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; })
+
+        labels.data(function (d) { return [d]; })
+                .attr("x", function (d) { return d.x + padTextX; })
+                .attr("y", function (d) { return d.y + padTextY; })
     }
 
 </script>
