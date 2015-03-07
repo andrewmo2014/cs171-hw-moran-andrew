@@ -7,14 +7,28 @@
         stroke-width: .8px;
     }
 
-    .circ {
+    /*.circ{*/
+        /*fill: white;*/
+        /*stroke: #000;*/
+        /*stroke-width: .9px;*/
+    /*}*/
+
+    g.node circle{
         fill: white;
         stroke: #000;
         stroke-width: .9px;
     }
 
-    .circ:hover {
+    /*.circ:hover {*/
+        /*fill: black;*/
+        /*stroke: #000;*/
+        /*stroke-width: .9px;*/
+    /*}*/
+
+    g.node:hover {
         fill: black;
+        stroke: #000;
+        stroke-width: .9px;
     }
 
 </style>
@@ -28,6 +42,9 @@
     <label><input type="radio" name="layout" value="scatterplot" > Scatterplot</label>
     <label><input type="radio" name="layout" value="circular"> Circular</label>
     <label><input type="radio" name="layout" value="force"> Force</label>
+</form>
+<form onchange="toggleLinks();">
+    <label><input type="checkbox" name="links" value="linkVisibility" checked> Show Links</label>
 </form>
 <div id="rankingOpts" style="display:block;">
     <form>
@@ -92,11 +109,18 @@
     //////////////////////////////////////
     // Widget Functionality
     //////////////////////////////////////
+    //Apply Input Interaction
+    var dropdowns = d3.selectAll("select");
+    dropdowns.on("change", function() {
+        UpdateFilters();
+        UpdateGraph();
+    });
+    var inputs = d3.selectAll("input");
+
     //Hide/Show divs
     function showOptions(selection)
     {
-        var radios = d3.selectAll("input");
-        radios.each(function () {
+        inputs.each(function () {
             var val = d3.select(this).node().checked;
             if (d3.select(this).attr("value") == "rankings") {
                 document.getElementById("rankingOpts").style.display = (val) ? "block" : 'none';
@@ -120,13 +144,17 @@
         UpdateFilters();
         UpdateGraph();
     }
-
-    //Apply Input Interaction
-    var inputs = d3.selectAll("select");
-    inputs.on("change", function() {
-        UpdateFilters();
-        UpdateGraph();
-    });
+    //Toggle Link visibility (actually adds/removes links for performance)
+    function toggleLinks(selection)
+    {
+        inputs.each(function () {
+            var val = d3.select(this).node().checked;
+            if (d3.select(this).attr("value") == "linkVisibility") {
+                if (!val)   { RemoveGraphLinks();   }
+                else        { AddGraphLinks();      }
+            }
+        });
+    }
 
     //Current Selection
     var selectTypeE = document.getElementById("selectType");
@@ -182,9 +210,11 @@
     // Graph Init layouts
     //////////////////////////////////////
     // Force layout
+    var link;
     var force = d3.layout.force()
             .charge(-50)
             .linkDistance(10)
+            .linkStrength(0)
             .on("tick", tick);
     // Pie Layout
     var r, arc, pie;
@@ -201,6 +231,12 @@
         restructuredData = CalculateRestructuredData(data);     //New Data
         graph.nodes = restructuredData[maxYear-minYear];        //Set Nodes
 
+        //Set Links and Forces
+        InitGraphLinks();
+        CompleteForce();
+        AddGraphLinks();
+
+        //Initialize First Graph
         UpdateFilters();
         InitializeVerticalLayout();
         UpdateGraph();
@@ -231,11 +267,57 @@
                             'population': data[i].years[j].population,
                             'year': currentYear,
                             'longitude': data[i].longitude,
-                            'latitude':data[i].latitude
+                            'latitude':data[i].latitude,
+                            'country_id':data[i].country_id,
+                            'top_partners':data[i].years[j].top_partners
                         });
             }
         }
         return restructuredData;
+    }
+
+    //////////////////////////////////////
+    // Graph Links
+    //////////////////////////////////////
+    function InitGraphLinks() {
+        graph.nodes.forEach(function (d, i) {
+            graph.nodes.forEach(function (e, j) {
+                d.top_partners.forEach(function (partner) {
+                    if (partner.country_id == e.country_id) {
+                        graph.links.push({"source": i, "target": j})
+                    }
+                });
+            });
+        });
+    }
+
+    function AddGraphLinks(){
+        var path = g.selectAll("g.path")
+                .data(graph.links);
+
+        path.enter()
+                .append("g").attr("class", "path")
+
+        var link = path.selectAll("line").data( function(d){ return [d]; });
+
+        link.enter()
+                .append("line")
+                .attr("class", "link")
+        link
+                .attr("x1", function(d) { return d.target.x; })
+                .attr("y1", function(d) { return d.target.y; })
+                .attr("x2", function(d) { return d.source.x; })
+                .attr("y2", function(d) { return d.source.y; });
+
+        link.exit().remove();
+        path.exit().remove();
+    }
+
+    function RemoveGraphLinks(){
+        var path = g.selectAll("g.path")
+                .data(graph.links);
+        var link = path.selectAll("line").data( function(d){ return [d]; });
+        link.remove();
     }
 
     //////////////////////////////////////
@@ -301,7 +383,7 @@
             default:
                 break;
         }
-
+        //Set Scatter scales
         var maxX = d3.max(graph.nodes, function (d) { return d[xAxis]; });
         var minX = d3.min(graph.nodes, function (d) { return d[xAxis]; });
         xScatterScale = d3.scale.linear().domain([minX, maxX]).range([0, width]);
@@ -337,7 +419,7 @@
 
                     return d;
                 });
-
+                //Update node pos
                 graph.nodes.forEach(function (o, i) {
                     for (var i = 0; i < rContinentScale.length; i++) {
                         if (rContinentScale[i].data == o.continent) {
@@ -375,7 +457,7 @@
                 InitializePieLayout(1.5);
                 rContinentScale = pie(continentListing).map(function (d, i) {
 
-                    // Needed to caclulate the centroid
+                    // Needed to calculate the centroid
                     d.innerRadius = 0;
                     d.outerRadius = r;
 
@@ -387,7 +469,7 @@
                 });
 
                 for (var z=0; z<rContinentScale.length; z++) {
-
+                    //Data specific to continent
                     var currentContinentData = graph.nodes.filter(function (c) {
                         if (c.continent == rContinentScale[z].data) {
                             return c;
@@ -397,7 +479,7 @@
                     InitializePieLayout(3.75);
                     pie(currentContinentData).map(function (d, i) {
 
-                        // Needed to caclulate the centroid
+                        // Needed to calculate the centroid
                         d.innerRadius = 0;
                         d.outerRadius = r;
 
@@ -418,6 +500,7 @@
     // Graph Initialize
     //////////////////////////////////////
     function InitializePieLayout(rFactor){
+        //Multiplier to make custom circles of various radius
         r = Math.min(height, width)/rFactor;
 
         arc = d3.svg.arc()
@@ -433,8 +516,15 @@
     function InitializeVerticalLayout(){
 
         force.stop();
+        //Sort and Add Node Attributes
+        graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        graph.nodes.map( function(d){
+            d.x = width/2;
+            d.y = yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
+            return d;
+        });
 
-        //Build Graph
+        //Build Graph Nodes
         var nodes = g.selectAll("g.node")
                 .data(graph.nodes);
 
@@ -442,14 +532,18 @@
                 .append("g").attr("class", "node")
 
         var circs = nodes.selectAll("circle")
-                .data( function(d){ return [d]; });
+                .data( function(d){
+                    return [d];
+                });
 
         circs.enter()
                 .append("circle")
                 .attr("class", "circ");
 
         circs.attr("r", 6)
-                .attr("cx", function (d){ return width/2; })
+                .attr("cx", function (d){
+                    return width/2;
+                })
                 .attr("cy", function (d){ return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]); });
 
         var labels = nodes.selectAll("text")
@@ -460,11 +554,16 @@
 
         labels.text(function (d) {  return d.name;  })
                 .attr("text-anchor", "left")
-                .attr("x", function (d) { return width/2 + padTextX;  })
+                .attr("x", function (d) {
+                    return width/2 + padTextX;
+                })
                 .attr("y", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY; })
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "10px")
                 .attr("fill", "black");
+
+        //Build Graph Links
+        AddGraphLinks();
 
         labels.exit().remove();
         circs.exit().remove();
@@ -478,58 +577,57 @@
     function CompleteVertical(){
 
         force.stop();
-
-        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) {   return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) { return width/2; })
-                .attr("cy", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]); });
-
-        labels.data(function (d) {  return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function (d) { return width/2 + padTextX;  })
-                .attr("y", function (d) { return yScale(d[(typeVal == 'equal') ? 'name' : attrVal]) + padTextY; });
+        //Add Node Attributes
+        graph.nodes.map( function(d){
+            d.x = width/2;
+            d.y = yScale(d[(typeVal == 'equal') ? 'name' : attrVal]);
+            return d;
+        });
+        //Sort DOM nodes
+        g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        graph_update_transition();
     }
 
     //Part 1: Scatter
     function CompleteScatter(){
 
         force.stop();
-
-        var nodes = g.selectAll("g.node").sort(function(a,b){ return b[attrVal] - a[attrVal]; });
-        var circs = nodes.selectAll("circle");
-        var labels = nodes.selectAll("text");
-
-        circs.data(function (d) { return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) { return xScatterScale(d[xAxis]); })
-                .attr("cy", function (d) { return yScatterScale(d[yAxis]); })
-
-        labels.data(function (d) { return [d]; })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("x", function (d) { return xScatterScale(d[xAxis]) + padTextX; })
-                .attr("y", function (d) { return yScatterScale(d[yAxis]) + padTextY; });
+        //Sort and Add Node Attributes
+        graph.nodes.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+        graph.nodes.map( function(d){
+            d.x = xScatterScale(d[xAxis]);
+            d.y = yScatterScale(d[yAxis]);
+            return d;
+        });
+        graph_update_transition();
     }
 
     //Part 2: Circular
     function CompleteCircular() {
-
         force.stop();
-
         UpdateNodesByCircle();
+        graph_update_transition();
+    }
 
-        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+    //Part 2: Multi-Force
+    function CompleteForce() {
+        force.nodes(graph.nodes)
+                .links(graph.links)
+                .size([width, height])
+                .start();
+    }
+
+    //Apply Force tick
+    function tick(e) {
+        UpdateNodesByForce(e);
+        graph_update(); //Without transition/lag
+    }
+
+    //////////////////////////////////////
+    // Graph Transition
+    //////////////////////////////////////
+    function graph_update_transition(){
+        var nodes = g.selectAll("g.node");
         var circs = nodes.selectAll("circle");
         var labels = nodes.selectAll("text");
 
@@ -546,25 +644,24 @@
                 .duration(1000)
                 .attr("x", function (d) { return d.x + padTextX; })
                 .attr("y", function (d) { return d.y + padTextY; });
+
+        var link = g.selectAll("g.path").data(graph.links).selectAll("line");
+
+        link.transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x1", function(d) { return d.target.x; })
+                .attr("y1", function(d) { return d.target.y; })
+                .attr("x2", function(d) { return d.source.x; })
+                .attr("y2", function(d) { return d.source.y; });
     }
 
-    //Part 2: Multi-Force
-    function CompleteForce() {
-
-        force.nodes(graph.nodes)
-                .links(graph.links)
-                .size([width, height])
-                .start();
-    }
-
-    //Apply Force tick
-    function tick(e) {
-
-        var nodes = g.selectAll("g.node").data(graph.nodes);//.sort(function(a,b){ return b[attrVal] - a[attrVal]; });
+    //Needed to remove transition to prevent lag (for force layout)
+    //Setting delay and duration to 0 still produced lag
+    function graph_update(){
+        var nodes = g.selectAll("g.node");
         var circs = nodes.selectAll("circle");
         var labels = nodes.selectAll("text");
-
-        UpdateNodesByForce(e);
 
         circs.data(function (d) { return [d]; })
                 .attr("cx", function (d) { return d.x; })
@@ -573,6 +670,13 @@
         labels.data(function (d) { return [d]; })
                 .attr("x", function (d) { return d.x + padTextX; })
                 .attr("y", function (d) { return d.y + padTextY; })
+
+        var link = g.selectAll("g.path").data(graph.links).selectAll("line");
+        link
+                .attr("x1", function(d) { return d.target.x; })
+                .attr("y1", function(d) { return d.target.y; })
+                .attr("x2", function(d) { return d.source.x; })
+                .attr("y2", function(d) { return d.source.y; });
     }
 
 </script>
