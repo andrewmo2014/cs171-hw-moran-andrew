@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Homework 2 Graph</title>
+<style>
+
+    .slider-width{
+        width: 440px;
+        vertical-align: top;
+        position: relative;
+        top: -3px;
+    }
+
+    .interactive{
+        width:120px;
+        float: left;
+    }
+
+    #container_main {height: 710px; width:1293px; font-size:0;}
+    #left_panel, #right_panel {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 16px;}
+    #left_panel {height: 100%; width: 75%; background: blue;}
+    #right_panel {height: 100%; width: 25%; background: yellow;}
+    #top_left_panel {height: 5%; width: 100%; background: green;}
+    #bottom_left_panel {height: 95%; width: 100%; background: red;}
+
+    .link {
+        stroke: gray;
+        stroke-width: .8px;
+        stroke-opacity: .4;
+    }
+
+    .circ{
+        fill: white;
+        stroke: #000;
+        stroke-width: .9px;
+    }
+
+    .node--source{
+        fill: black;
+    }
+
+    .node--target{
+        fill: white;
+    }
+
+    .link--source{
+        stroke: black;
+        stroke-opacity: 1;
+    }
+
+    .hidden{
+        opacity: .4;
+        stroke-opacity: .4;
+    }
+
+</style>
+<body>
+<!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
+<script src="src/d3.v3.min.js"></script>
+
+<div id="container_main">
+    <div id="left_panel">
+        <div id="top_left_panel">
+            <!--Select Year-->
+            <label >
+                <label class = interactive>Year:</label>
+                <label id="minYear">1995 </label>
+                <input class="slider-width" type="range" name="points" width = "300" min="1995" max="2012" step="1" value="0" id="slider-time" oninput=";">
+                <label id="maxYear">2012</label>
+            </label>
+        </div>
+        <!--SVG Main-->
+        <div id="bottom_left_panel">
+        </div>
+    </div>
+    <!--Legend & Select Attributes Panel-->
+    <div id="right_panel">
+        <form>
+            <label><input type="checkbox" name="combine" value="combine" checked> Combine Like Continents</label>
+        </form>
+        <div>
+            <form>
+                Top Partner Sorting:
+                <select>
+                    <option value="export_ranking" selected="selected">Export Amount</option>
+                    <option value="mutuality">Mutuality</option>
+                    <option value="proximity">Proximity</option>
+
+                </select>
+            </form>
+            <form>
+                Country Sorting:
+                <select>
+                    <option value="name" selected="selected">Name</option>
+                    <option value="population">Population</option>
+                    <option value="gdp">GDP</option>
+                </select>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    var screen_width = 1293;
+    var screen_height = 710;
+    var svg_width = screen_width * .75;
+    var svg_height = screen_height * .95;
+
+    //Grouping Reference
+    var svg = d3.select("#bottom_left_panel").append("svg")
+            .attr("width", svg_width)
+            .attr("height", svg_height);
+
+    var g = svg.append("g");
+
+    //Data Holders
+    var graph = {nodes: [], links: []};
+    var restructuredData;
+    var continentListing = ["Americas", "Africa", "Asia", "Europe", "Oceania"];
+
+    //Label Loc offset
+    var padTextX = 8;
+    var padTextY = 4;
+
+    //////////////////////////////////////
+    // Graph Init layouts
+    //////////////////////////////////////
+    // Force layout
+    var link;
+    var force = d3.layout.force()
+            .charge(-50)
+            .linkDistance(10)
+            .linkStrength(0);
+    // Pie Layout
+    var r, arc, pie, arc_outer;
+    // DOM
+    var nodes, circs, labels, paths, links;
+
+    //////////////////////////////////////
+    // Read In Data
+    //////////////////////////////////////
+    d3.json( "data/countries_1995_2012.json", function(error, data) {
+        //Calculate year range
+        minYear = Number.MAX_VALUE;
+        maxYear = Number.MIN_VALUE;
+
+        restructuredData = CalculateRestructuredData(data);     //New Data
+        graph.nodes = restructuredData[maxYear-minYear];        //Set Nodes
+
+        //Set Links and Forces
+        InitGraphLinks();
+        CompleteForce();
+
+        //Initialize First Graph
+        InitializeCircular();
+        CompleteCircular();
+
+    });
+
+    //Reformat Data since nested (multi-year)
+    function CalculateRestructuredData(data) {
+        var restructuredData = [];
+        for (var i = 0; i < data.length; i++) {
+            for (var j = 0; j < data[i].years.length; j++) {
+
+                if (i==0) {
+                    restructuredData[j] = new Array();
+                    var currentYear = data[i].years[j].year;
+
+                    //Update min/max years in data
+                    minYear = (currentYear < minYear) ? currentYear : minYear;
+                    maxYear = (currentYear > maxYear) ? currentYear : maxYear;
+                }
+
+                restructuredData[j].push(
+                        {
+                            'name': data[i].name,
+                            'continent': data[i].continent,
+                            'gdp': data[i].years[j].gdp,
+                            'life_expectancy': data[i].years[j].life_expectancy,
+                            'population': data[i].years[j].population,
+                            'year': currentYear,
+                            'longitude': data[i].longitude,
+                            'latitude':data[i].latitude,
+                            'country_id':data[i].country_id,
+                            'top_partners':data[i].years[j].top_partners
+                        });
+            }
+        }
+        return restructuredData;
+    }
+
+    function InitGraphLinks() {
+        graph.nodes.forEach(function (d, i) {
+            graph.nodes.forEach(function (e, j) {
+                d.top_partners.forEach(function (partner) {
+                    if (partner.country_id == e.country_id) {
+                        graph.links.push({"source": i, "target": j})
+                    }
+                });
+            });
+        });
+    }
+
+    function InitializePieLayout(rFactor){
+        //Multiplier to make custom circles of various radius
+        r = Math.min(svg_height, svg_width)/rFactor;
+
+        arc = d3.svg.arc()
+                .outerRadius(r);
+
+        pie = d3.layout.pie()
+                //.sort(function(a, b) { return b[circularVal] - a[circularVal];}) // Sorting by categories
+                .value(function(d, i) {
+                    return 1;  // We want an equal pie share/slice for each point
+                });
+    }
+
+    //Initilaize
+    function InitializeCircular(){
+        force.stop();
+
+        //Build Graph Nodes
+        nodes = g.selectAll("g.node")
+                .data(graph.nodes);
+
+        nodes.enter()
+                .append("g").attr("class", "node");
+
+        circs = nodes.selectAll("circle")
+                .data( function(d){ return [d]; });
+
+        circs.enter()
+                .append("circle")
+                .attr("class", "circ");
+
+        circs.attr("r", 6)
+                .attr("cx", function (d){ return svg_width/2; })
+                .attr("cy", function (d){ return svg_height/2 });
+
+        labels = nodes.selectAll("text")
+                .data( function(d){ return [d]; });
+
+        labels.enter()
+                .append("text");
+
+        labels.text(function (d) {  return d.name;  })
+                .attr("text-anchor", "left")
+                .attr("x", function (d) { return svg_width/2 + padTextX; })
+                .attr("y", function (d) { return svg_height/2 + padTextY; })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black");
+
+        labels.exit().remove();
+        circs.exit().remove();
+        nodes.exit().remove();
+    }
+
+    //Part 2: Circular
+    function CompleteCircular() {
+        force.stop();
+
+        InitializePieLayout(1.25);
+        pie(graph.nodes).map(function(d, i) {
+
+            // Needed to caclulate the centroid
+            d.innerRadius = 0;
+            d.outerRadius = r;
+
+            d.data.startAngle = d.startAngle;
+            d.data.endAngle = d.endAngle;
+
+            d.data.x = arc.centroid(d)[0] + svg_width/2;
+            d.data.y = arc.centroid(d)[1] + svg_height/2;
+
+            return d.data;
+        });
+
+        graph_update();
+    }
+
+    //Part 2: Multi-Force
+    function CompleteForce() {
+        force.nodes(graph.nodes)
+                .links(graph.links)
+                .size([svg_width, svg_height])
+                .start();
+    }
+
+    //Needed to remove transition to prevent lag (for force layout)
+    //Setting delay and duration to 0 still produced lag
+    function graph_update(){
+
+        circs.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("cx", function (d) { return d.x; })
+                .attr("cy", function (d) { return d.y; });
+
+        labels.data(function (d) { return [d]; })
+                .transition()
+                .delay(100)
+                .duration(1000)
+                .attr("x", function (d) {
+                    var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
+                    return d.x + shift * padTextX;
+                })
+                .attr("y", function (d) { return d.y + padTextY; })
+                .attr("transform", function(d) {
+                    return "rotate(" + angle(d, -90, 90) + " " + d.x + "," + d.y + ")";
+                })
+                .attr("text-anchor", function (d) {
+                    return angle(d, 0, 0) < 0 ? "start" : "end";
+                });
+
+    }
+
+    // Updated Angle Calculation Function...
+    function angle(d, offset, threshold) {
+        //var theta = Math.atan2(d.y - svg_height/2, d.x - svg_width/2) * 180 / Math.PI;
+        var a = (d.startAngle + d.endAngle) * 90 / Math.PI + offset;
+        return a > threshold ? a - 180 : a;
+    }
+
+
+</script>
+</body>
+</html>
