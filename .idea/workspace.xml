@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="7f436fe7-d2d7-45f7-ae4b-0da354138779" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hw2/design.html" afterPath="$PROJECT_DIR$/hw2/design.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="2015-cs171-homework.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -29,8 +30,8 @@
       <file leaf-file-name="table.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw1/table.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="189.91667" vertical-offset="5518" max-vertical-offset="6315">
-              <caret line="64" column="21" selection-start-line="64" selection-start-column="21" selection-end-line="64" selection-end-column="21" />
+            <state vertical-scroll-proportion="-8.125" vertical-offset="4410" max-vertical-offset="6315">
+              <caret line="307" column="27" selection-start-line="307" selection-start-column="27" selection-end-line="307" selection-end-column="27" />
               <folding />
             </state>
           </provider>
@@ -39,8 +40,8 @@
       <file leaf-file-name="barchart.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-25.980392" vertical-offset="3655" max-vertical-offset="6600">
-              <caret line="332" column="16" selection-start-line="332" selection-start-column="16" selection-end-line="334" selection-end-column="52" />
+            <state vertical-scroll-proportion="-32.45098" vertical-offset="4675" max-vertical-offset="6600">
+              <caret line="422" column="40" selection-start-line="422" selection-start-column="17" selection-end-line="422" selection-end-column="40" />
               <folding>
                 <element signature="n#style#0;n#label#1;n#div#1;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#label#1;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -54,8 +55,8 @@
       <file leaf-file-name="graph.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw2/graph.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-29.137255" vertical-offset="8444" max-vertical-offset="10875">
-              <caret line="662" column="13" selection-start-line="662" selection-start-column="8" selection-end-line="662" selection-end-column="13" />
+            <state vertical-scroll-proportion="-6.7843137" vertical-offset="14" max-vertical-offset="10875">
+              <caret line="24" column="13" selection-start-line="24" selection-start-column="5" selection-end-line="24" selection-end-column="13" />
               <folding>
                 <element signature="n#style#0;n#div#0;n#body#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#div#1;n#body#0;n#!!top" expanded="true" />
@@ -69,8 +70,8 @@
       <file leaf-file-name="design.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/hw2/design.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.39449543" vertical-offset="9955" max-vertical-offset="10545">
-              <caret line="678" column="5" selection-start-line="678" selection-start-column="5" selection-end-line="678" selection-end-column="5" />
+            <state vertical-scroll-proportion="0.44954127" vertical-offset="14620" max-vertical-offset="15165">
+              <caret line="991" column="5" selection-start-line="991" selection-start-column="5" selection-end-line="991" selection-end-column="5" />
               <folding />
             </state>
           </provider>
@@ -79,8 +80,8 @@
       <file leaf-file-name="graph_example.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw2/graph_example.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-28.833334" vertical-offset="2278" max-vertical-offset="3420">
-              <caret line="198" column="36" selection-start-line="198" selection-start-column="0" selection-end-line="198" selection-end-column="36" />
+            <state vertical-scroll-proportion="-6.9583335" vertical-offset="2278" max-vertical-offset="3420">
+              <caret line="163" column="0" selection-start-line="163" selection-start-column="0" selection-end-line="163" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -109,7 +110,7 @@
       <file leaf-file-name="countries_1995_2012.json" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="164205" max-vertical-offset="1560195">
+            <state vertical-scroll-proportion="-0.0" vertical-offset="164205" max-vertical-offset="1560195">
               <caret line="10947" column="39" selection-start-line="10947" selection-start-column="24" selection-end-line="10947" selection-end-column="39" />
               <folding />
             </state>
@@ -129,12 +130,12 @@
         <option value="$PROJECT_DIR$/section1/material/basic-completed.html" />
         <option value="$PROJECT_DIR$/hw1/src/d3.v3.min.js" />
         <option value="$PROJECT_DIR$/hw1/table.html" />
-        <option value="$PROJECT_DIR$/hw1/barchart.html" />
         <option value="$PROJECT_DIR$/hw1/answers.md" />
         <option value="$PROJECT_DIR$/hw2/data/countries_1995_2012.json" />
         <option value="$PROJECT_DIR$/hw2/answers.md" />
         <option value="$PROJECT_DIR$/section3/material/nodes.html" />
         <option value="$PROJECT_DIR$/hw2/graph.html" />
+        <option value="$PROJECT_DIR$/hw1/barchart.html" />
         <option value="$PROJECT_DIR$/hw2/design.html" />
       </list>
     </option>
@@ -443,7 +444,9 @@
     <option name="LAST_COMMIT_MESSAGE" value="init webstorm integration" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <option name="time" value="1" />
+    </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
@@ -783,14 +786,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="164205" max-vertical-offset="1560195">
-          <caret line="10947" column="39" selection-start-line="10947" selection-start-column="24" selection-end-line="10947" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/section3/material/graph-final.html">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1063" max-vertical-offset="1635">
@@ -801,37 +796,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/hw1/table.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="189.91667" vertical-offset="5518" max-vertical-offset="6315">
-          <caret line="64" column="21" selection-start-line="64" selection-start-column="21" selection-end-line="64" selection-end-column="21" />
+        <state vertical-scroll-proportion="-8.125" vertical-offset="4410" max-vertical-offset="6315">
+          <caret line="307" column="27" selection-start-line="307" selection-start-column="27" selection-end-line="307" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="164205" max-vertical-offset="1560195">
+          <caret line="10947" column="39" selection-start-line="10947" selection-start-column="24" selection-end-line="10947" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/hw2/graph_example.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-28.833334" vertical-offset="2278" max-vertical-offset="3420">
-          <caret line="198" column="36" selection-start-line="198" selection-start-column="0" selection-end-line="198" selection-end-column="36" />
+        <state vertical-scroll-proportion="-6.9583335" vertical-offset="2278" max-vertical-offset="3420">
+          <caret line="163" column="0" selection-start-line="163" selection-start-column="0" selection-end-line="163" selection-end-column="0" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-25.980392" vertical-offset="3655" max-vertical-offset="6600">
-          <caret line="332" column="16" selection-start-line="332" selection-start-column="16" selection-end-line="334" selection-end-column="52" />
-          <folding>
-            <element signature="n#style#0;n#label#1;n#div#1;n#body#0;n#html#0;n#!!top" expanded="true" />
-            <element signature="n#style#0;n#label#1;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
-            <element signature="n#style#0;n#label#1;n#div#4;n#body#0;n#html#0;n#!!top" expanded="true" />
-            <element signature="n#style#0;n#label#2;n#div#4;n#body#0;n#html#0;n#!!top" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/hw2/graph.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-29.137255" vertical-offset="8444" max-vertical-offset="10875">
-          <caret line="662" column="13" selection-start-line="662" selection-start-column="8" selection-end-line="662" selection-end-column="13" />
+        <state vertical-scroll-proportion="-6.7843137" vertical-offset="14" max-vertical-offset="10875">
+          <caret line="24" column="13" selection-start-line="24" selection-start-column="5" selection-end-line="24" selection-end-column="13" />
           <folding>
             <element signature="n#style#0;n#div#0;n#body#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#div#1;n#body#0;n#!!top" expanded="true" />
@@ -841,10 +831,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-32.45098" vertical-offset="4675" max-vertical-offset="6600">
+          <caret line="422" column="40" selection-start-line="422" selection-start-column="17" selection-end-line="422" selection-end-column="40" />
+          <folding>
+            <element signature="n#style#0;n#label#1;n#div#1;n#body#0;n#html#0;n#!!top" expanded="true" />
+            <element signature="n#style#0;n#label#1;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
+            <element signature="n#style#0;n#label#1;n#div#4;n#body#0;n#html#0;n#!!top" expanded="true" />
+            <element signature="n#style#0;n#label#2;n#div#4;n#body#0;n#html#0;n#!!top" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/hw2/design.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.39449543" vertical-offset="9955" max-vertical-offset="10545">
-          <caret line="678" column="5" selection-start-line="678" selection-start-column="5" selection-end-line="678" selection-end-column="5" />
+        <state vertical-scroll-proportion="0.44954127" vertical-offset="14620" max-vertical-offset="15165">
+          <caret line="991" column="5" selection-start-line="991" selection-start-column="5" selection-end-line="991" selection-end-column="5" />
           <folding />
         </state>
       </provider>

@@ -53,36 +53,6 @@
     #top_left_panel {height: 5%; width: 100%; background: white;}
     #bottom_left_panel {height: 95%; width: 100%; background: white;}
 
-    .link {
-        stroke: gray;
-        stroke-width: .8px;
-        stroke-opacity: .4;
-    }
-
-    .circ{
-        fill: white;
-        stroke: #000;
-        stroke-width: .9px;
-    }
-
-    .node--source{
-        fill: black;
-    }
-
-    .node--target{
-        fill: white;
-    }
-
-    .link--source{
-        stroke: black;
-        stroke-opacity: 1;
-    }
-
-    .hidden{
-        opacity: .4;
-        stroke-opacity: .4;
-    }
-
 </style>
 <body>
 <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
@@ -111,7 +81,7 @@
         <div>
             <form>
                 Top Partner Sorting:
-                <select>
+                <select id="aster_sorting_val" onchange="" name="aster_sorting_val">
                     <option value="export_ranking" selected="selected">Export Amount</option>
                     <option value="mutuality">Mutuality</option>
                     <option value="proximity">Proximity</option>
@@ -132,23 +102,104 @@
 
 <script>
 
+    /////////////////////////////////
+    //// Apply Filters
+    /////////////////////////////////
+
+    //Update Data due to filters
+    function UpdateFilters() {
+        countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
+        asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
+        CompleteForce();
+    }
+
+    //Part 2: Multi-Force
+    function CompleteForce() {
+        //Init graph links
+
+        graph.nodes = restructuredData[yearIndex];
+        graph.nodes.sort(compareCountriesCurrent);
+        graph.links = [];
+        graph.nodes.forEach(function (d, i) {
+            graph.nodes.forEach(function (e, j) {
+                d.top_partners.forEach(function (partner) {
+                    if (partner.country_id == e.country_id) {
+                        graph.links.push({"source": i, "target": j})
+                    }
+                });
+            });
+        });
+
+        //Link Nodes and links to force
+        force.nodes(graph.nodes)
+                .links(graph.links)
+                .size([svg_width, svg_height])
+                .start();
+        //Dont apply layout
+        force.stop();
+    }
+
+
+    //Reformat Data since nested (multi-year)
+    function CalculateRestructuredData(data) {
+        var restructuredData = [];
+        for (var i = 0; i < data.length; i++) {
+            for (var j = 0; j < data[i].years.length; j++) {
+
+                if (i==0) {
+                    restructuredData[j] = new Array();
+                    var currentYear = data[i].years[j].year;
+
+                    //Update min/max years in data
+                    minYear = (currentYear < minYear) ? currentYear : minYear;
+                    maxYear = (currentYear > maxYear) ? currentYear : maxYear;
+                }
+
+                restructuredData[j].push(
+                        {
+                            'name': data[i].name,
+                            'continent': data[i].continent,
+                            'gdp': data[i].years[j].gdp,
+                            'life_expectancy': data[i].years[j].life_expectancy,
+                            'population': data[i].years[j].population,
+                            'year': currentYear,
+                            'longitude': data[i].longitude,
+                            'latitude':data[i].latitude,
+                            'country_id':data[i].country_id,
+                            'top_partners':data[i].years[j].top_partners
+                        });
+            }
+        }
+        return restructuredData;
+    }
+
 
     var intransition = false;
 
     var dropdowns = d3.selectAll("select");
     dropdowns.on("change", function() {
+//        UpdateFilters();
+//
+//        //Initialize First G
+//        InitializeCircular()
+//        CompleteCircular();
+
         UpdateFilters();
+        EncodeCircular();
         CompleteCircular();
+        UpdateCircular();
+
+
     });
-    //Update Data due to filters
-    function UpdateFilters() {
-        graph.nodes = restructuredData[yearIndex];
-        countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
-    }
+
 
 
     var countrySortingE = document.getElementById("country_sorting_val");
     var countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
+    var countrySortingValPrev = countrySortingVal;                         //Did sorting change
+
+    var asterSortingE = document.getElementById("aster_sorting_val");
+    var asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
 
     var screen_width = 1293;
     var screen_height = 710;
@@ -201,21 +252,38 @@
     var timeSlider = document.getElementById("slider-time");
     var yearIndex = timeSlider.value - timeSlider.min;
 
+    ////////ASTER
+
+
+
+
+
+
+
+    ////////////////////
+
     //Apply Input Interaction
     var inputs = d3.selectAll("input");
     inputs.on("input", function(){
         yearIndex = timeSlider.value - timeSlider.min;
-        graph.nodes = restructuredData[yearIndex];        //Set Nodes
 
-        //Set Links and Forces
-        CompleteForce();
-
-        //Initialize First Graph
         UpdateFilters();
-        //InitializeCircular();
-        RemoveGraphLinks();
-        //AddGraphLinks();
+        EncodeCircular();
         CompleteCircular();
+        UpdateCircular();
+
+
+//        UpdateFilters();
+//
+//
+//
+//
+//        //Initialize First G
+//        InitializeCircular()
+//        CompleteCircular();
+
+
+        //SortCircular();
     });
 
     //////////////////////////////////////
@@ -226,51 +294,50 @@
 
 
         restructuredData = CalculateRestructuredData(data);     //New Data
-        graph.nodes = restructuredData[yearIndex];        //Set Nodes
+        UpdateFilters();
 
-        //Set Links and Forces
-        CompleteForce();
+
+        EncodeCircular();
+        CompleteCircular();
+        UpdateCircular();
 
         //Initialize First Graph
-        UpdateFilters();
-        InitializeCircular();
-        CompleteCircular();
+        //InitializeCircular();
+        //CompleteCircular();
+
+
+
+        //SortCircular();
+
+
+        //InitializeAster();
 
 
     });
 
-    //Reformat Data since nested (multi-year)
-    function CalculateRestructuredData(data) {
-        var restructuredData = [];
-        for (var i = 0; i < data.length; i++) {
-            for (var j = 0; j < data[i].years.length; j++) {
 
-                if (i==0) {
-                    restructuredData[j] = new Array();
-                    var currentYear = data[i].years[j].year;
+    function EncodeCircular(){
+//        RemoveGraphLinks();
+        AddGraphLinks();
 
-                    //Update min/max years in data
-                    minYear = (currentYear < minYear) ? currentYear : minYear;
-                    maxYear = (currentYear > maxYear) ? currentYear : maxYear;
-                }
+        //Build Graph Nodes
+        nodes = g.selectAll("g.node")
+                .data(graph.nodes);
 
-                restructuredData[j].push(
-                        {
-                            'name': data[i].name,
-                            'continent': data[i].continent,
-                            'gdp': data[i].years[j].gdp,
-                            'life_expectancy': data[i].years[j].life_expectancy,
-                            'population': data[i].years[j].population,
-                            'year': currentYear,
-                            'longitude': data[i].longitude,
-                            'latitude':data[i].latitude,
-                            'country_id':data[i].country_id,
-                            'top_partners':data[i].years[j].top_partners
-                        });
-            }
-        }
-        return restructuredData;
+        nodes.enter()
+                .append("g")
+                .attr("class", "node")
+                .on("mouseover", mouseOverEvent)
+                .on("mouseout", mouseOutEvent);
+
+        AddCircles();
+        AddLabels();
+
+        labels.exit().remove();
+        circs.exit().remove();
+        nodes.exit().remove();
     }
+
 
 
     function AddGraphLinks(){
@@ -287,7 +354,8 @@
         links.enter()
                 .append("path")
                 .attr("class", "trade_link")
-                .attr("stroke", "black");
+                .attr("stroke", "black")
+                .attr("opacity", 0);
 
         links.exit().remove();
         paths.exit().remove();
@@ -301,34 +369,7 @@
         paths.remove();
     }
 
-    function InitializePieLayout(rFactor){
-        //Multiplier to make custom circles of various radius
-        r = Math.min(svg_height, svg_width)/rFactor;
-
-        arc = d3.svg.arc()
-                .outerRadius(r);
-
-        pie = d3.layout.pie()
-                .sort(countrySorting) // Sorting by categories
-                .value(function(d, i) {
-                    return 1;  // We want an equal pie share/slice for each point
-                });
-    }
-
-    //Initilaize
-    function InitializeCircular(){
-
-        AddGraphLinks();
-
-        //Build Graph Nodes
-        nodes = g.selectAll("g.node")
-                .data(graph.nodes);
-
-        nodes.enter()
-                .append("g")
-                .attr("class", "node")
-                .on("mouseover", mouseOverEvent)
-                .on("mouseout", mouseOutEvent);
+    function AddCircles(){
 
         circs = nodes.selectAll("circle")
                 .data( function(d){
@@ -337,9 +378,8 @@
 
         circs.enter()
                 .append("circle")
-                .attr("class", "circ");
-
-        circs.attr("r", 6)
+                .attr("class", "circ")
+                .attr("r", 6)
                 .attr("cx", function (d){
                     return svg_cx;
                 })
@@ -347,6 +387,9 @@
                     return svg_cy;
                 });
 
+    }
+
+    function AddLabels(){
         labels = nodes.selectAll("text")
                 .data( function(d){ return [d]; });
 
@@ -360,18 +403,221 @@
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "10px")
                 .attr("fill", "black");
-
-        labels.exit().remove();
-        circs.exit().remove();
-        nodes.exit().remove();
     }
+
+    function InitializePieLayout(rFactor){
+        //Multiplier to make custom circles of various radius
+        r = Math.min(svg_height, svg_width)/rFactor;
+
+        arc = d3.svg.arc()
+                .outerRadius(r);
+
+        pie = d3.layout.pie()
+                .sort(compareCountriesCurrent) // Sorting by categories
+                .value(function(d, i) {
+                    return 1;  // We want an equal pie share/slice for each point
+                });
+    }
+
+    //Initilaize
+//    function InitializeCircular(){
+//
+//        AddGraphLinks();
+//
+//        //Build Graph Nodes
+//        nodes = g.selectAll("g.node")
+//                .data(graph.nodes);
+//
+//        nodes.enter()
+//                .append("g")
+//                .attr("class", "node")
+//                .on("mouseover", mouseOverEvent)
+//                .on("mouseout", mouseOutEvent);
+//
+//        circs = nodes.selectAll("circle")
+//                .data( function(d){
+//                    return [d];
+//                });
+//
+//        circs.enter()
+//                .append("circle")
+//                .attr("class", "circ");
+//
+//        circs.attr("r", 6)
+//                .attr("cx", function (d){
+//                    return svg_cx;
+//                })
+//                .attr("cy", function (d){
+//                    return svg_cy;
+//                });
+//
+//        labels = nodes.selectAll("text")
+//                .data( function(d){ return [d]; });
+//
+//        labels.enter()
+//                .append("text");
+//
+//        labels.text(function (d) {  return d.name;  })
+//                .attr("text-anchor", "left")
+//                .attr("x", function (d) { return svg_cx + padTextX; })
+//                .attr("y", function (d) { return svg_cy + padTextY; })
+//                .attr("font-family", "sans-serif")
+//                .attr("font-size", "10px")
+//                .attr("fill", "black");
+//
+//        labels.exit().remove();
+//        circs.exit().remove();
+//        nodes.exit().remove();
+//    }
+
+
+//    function UpdateAster(){
+//
+//
+//        var aster_width = 300;
+//        var aster_height = 300;
+//        var asterYOffset = 0;
+//        var aster_radius = Math.min(aster_width, aster_height) / 2;
+//        var aster_innerRadius = 0.3 * aster_radius;
+//        var total_exportSum;
+//
+//        var currentTopPartners = []
+//        graph.links.filter(function (d) {
+//            if (d.source.name == selectedCountry) {
+//                console.log( selectedCountry );
+//
+//                d.source.top_partners.forEach( function(e,i){
+//                    if (e.country_id == d.source.country_id){
+//                        currentTopPartners.push({"partner" : d.target,
+//                            "p_total_export" : e.total_export});
+//                    }
+//                })
+//            }
+//        });
+//
+//        total_exportSum = 0;
+//        currentTopPartners.forEach( function(d){
+//            total_exportSum = total_exportSum + d.p_total_export;
+//        });
+//
+//
+//        var aster_pie = d3.layout.pie()
+//                .sort(countrySorting)
+//                .value(function(d) { return 1; });
+//
+//        var aster_arc = d3.svg.arc()
+//                .innerRadius(aster_innerRadius)
+//                .outerRadius(function (d,i) {
+////                    currentTopPartners.forEach( function(e){
+////                        if (e.partner == d.data.target){
+//                    return (aster_radius - aster_innerRadius) * (d.data.p_total_export/total_exportSum) + aster_innerRadius;
+////                        }
+////                    });
+//                });
+//
+//        var aster_outlineArc = d3.svg.arc()
+//                .innerRadius(aster_innerRadius)
+//                .outerRadius(aster_radius);
+//
+//        var svg_aster = d3.select("#right_panel");
+//
+//
+//        var path = svg_aster.selectAll(".solidArc")
+//                .data(aster_pie(currentTopPartners))
+//                .attr("fill", function(d) { return "red"; })
+//                .attr("class", "solidArc")
+//                .attr("stroke", "gray")
+//                .attr("d", aster_arc);
+////            .on('mouseover', tip.show)
+////            .on('mouseout', tip.hide);
+//
+//        var outerPath = svg_aster.selectAll(".outlineArc")
+//                .data(aster_pie(currentTopPartners))
+//                .attr("fill", "none")
+//                .attr("stroke", "gray")
+//                .attr("class", "outlineArc")
+//                .attr("d", aster_outlineArc);
+//    }
+//
+//
+//    function InitializeAster() {
+//        var aster_width = 300;
+//        var aster_height = 300;
+//        var asterYOffset = 0;
+//        var aster_radius = Math.min(aster_width, aster_height) / 2;
+//        var aster_innerRadius = 0.3 * aster_radius;
+//        var total_exportSum;
+//
+//        var currentTopPartners = []
+//        graph.links.filter(function (d) {
+//            if (d.source.name == selectedCountry) {
+//                d.target.top_partners.forEach( function(e,i){
+//                    if (e.country_id == d.source.country_id){
+//                        currentTopPartners.push({"partner" : d.target,
+//                                                "p_total_export" : e.total_export});
+//                    }
+//                })
+//            }
+//        });
+//
+//        total_exportSum = 0;
+//        currentTopPartners.forEach( function(d){
+//            total_exportSum = total_exportSum + d.p_total_export;
+//        });
+//
+//
+//        var aster_pie = d3.layout.pie()
+//                .sort(null)
+//                .value(function(d) { return 1; });
+//
+//        var aster_arc = d3.svg.arc()
+//                .innerRadius(aster_innerRadius)
+//                .outerRadius(function (d,i) {
+//                    console.log(d);
+////                    currentTopPartners.forEach( function(e){
+////                        if (e.partner == d.data.target){
+//                            return (aster_radius - aster_innerRadius) * (d.data.p_total_export/total_exportSum) + aster_innerRadius;
+////                        }
+////                    });
+//                });
+//
+//        var aster_outlineArc = d3.svg.arc()
+//                .innerRadius(aster_innerRadius)
+//                .outerRadius(aster_radius);
+//
+//        var svg_aster = d3.select("#right_panel").append("svg")
+//                .attr("width", aster_width)
+//                .attr("height", aster_height)
+//                .append("g")
+//                .attr("transform", "translate(" + aster_width / 2 + "," + (aster_height/2 + asterYOffset) + ")");
+//
+//
+//        var path = svg_aster.selectAll(".solidArc")
+//                .data(aster_pie(currentTopPartners))
+//                .enter().append("path")
+//                .attr("fill", function(d) { return "red"; })
+//                .attr("class", "solidArc")
+//                .attr("stroke", "gray")
+//                .attr("d", aster_arc);
+////            .on('mouseover', tip.show)
+////            .on('mouseout', tip.hide);
+//
+//        var outerPath = svg_aster.selectAll(".outlineArc")
+//                .data(aster_pie(currentTopPartners))
+//                .enter().append("path")
+//                .attr("fill", "none")
+//                .attr("stroke", "gray")
+//                .attr("class", "outlineArc")
+//                .attr("d", aster_outlineArc);
+//
+//    }
 
 
     //Part 2: Circular
     function CompleteCircular() {
 
         InitializePieLayout(R_FACTOR);
-        pie(graph.nodes).map(function(d, i) {
+        pie(graph.nodes).map(function (d, i) {
 
             // Needed to caclulate the centroid
             d.innerRadius = 0;
@@ -389,128 +635,116 @@
             return d.data;
         });
 
+//        if (startUp) {
+//            graph_start();
+//            startUp = false;
+//        }
+//        else{
+//            graph_update();
+//        }
+    }
+//
+    function UpdateCircular(){
         if (startUp) {
-            graph_start();
+            graph_update(true);
             startUp = false;
         }
         else{
-            graph_update();
+            graph_update(false);
         }
     }
 
-    //Part 2: Multi-Force
-    function CompleteForce() {
-        //Init graph links
-        graph.nodes.forEach(function (d, i) {
-            graph.nodes.forEach(function (e, j) {
-                d.top_partners.forEach(function (partner) {
-                    if (partner.country_id == e.country_id) {
-                        graph.links.push({"source": i, "target": j})
-                    }
-                });
-            });
-        });
-
-        //Link Nodes and links to force
-        force.nodes(graph.nodes)
-                .links(graph.links)
-                .size([svg_width, svg_height])
-                .start();
-
-        //Dont apply layout
-        force.stop();
-    }
 
     //Needed to remove transition to prevent lag (for force layout)
     //Setting delay and duration to 0 still produced lag
-    function graph_start(){
+//    function graph_start(){
+//
+//        links.data(function (d) {
+//            return [d];
+//        }).transition()
+//                .delay(100)
+//                .duration(1000)
+//                .attr("d", function(d) {
+//
+//                    if (d.source.name == selectedCountry) {
+//
+//                        var x0 = r / 2 * Math.cos(d.source.startAngle - Math.PI/2.0) + svg_cx;
+//                        var y0 = r / 2 * Math.sin(d.source.startAngle - Math.PI/2.0) + svg_cy;
+//
+//                        var xH = svg_cx;
+//                        var yH = svg_cy;
+//
+//                        var x1 = r / 2 * Math.cos(d.target.startAngle - Math.PI/2.0) + svg_cx;
+//                        var y1 = r / 2 * Math.sin(d.target.startAngle - Math.PI/2.0) + svg_cy;
+//
+//                        var x2 = r / 2 * Math.cos(d.target.endAngle - Math.PI/2.0) + svg_cx;
+//                        var y2 = r / 2 * Math.sin(d.target.endAngle - Math.PI/2.0) + svg_cy;
+//
+//                        var x3 = r / 2 * Math.cos(d.source.endAngle - Math.PI/2.0) + svg_cx;
+//                        var y3 = r / 2 * Math.sin(d.source.endAngle - Math.PI/2.0) + svg_cy;
+//
+//
+//                        return "M" + x0 + "," + y0 +
+//                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x1 + " " + y1 +
+//                                "L" + x2 + "," + y2 +
+//                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x3 + " " + y3 +
+//                                "L" + x0 + "," + y0 +
+//                                "Z";
+//                    }
+//
+//                })
+//                .attr("stroke", "black")
+//                .attr("fill", function(d){
+//                    if (d.source.name == selectedCountry) {
+//                        var ranking = GetMutualRanking(d.source, d.target);
+//
+//                        if (ranking >= 0) {
+//                            return mutualScale(ranking);
+//                        }
+//                        else {
+//                            return "grey";
+//                        }
+//                    }
+//
+//                });
+//
+//        circs.data(function (d) {
+//                    return [d];
+//                })
+//                .transition()
+//                .delay(100)
+//                .duration(1000)
+//                .attrTween("cx", function (d, i, a) {
+//                    d.xPrev = d.x;
+//                    return d3.interpolate(a,d.x);
+//                })
+//                .attrTween("cy", function (d, i, a) {
+//                    d.yPrev = d.y;
+//                    return d3.interpolate(a,d.y);
+//                });
+//
+//        circs.classed("node--source", function(d){
+//            return d.name == selectedCountry;
+//        });
+//
+//        labels.data(function (d) { return [d]; })
+//                .attr("x", function (d) {
+//                    var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
+//                    return d.x + shift * padTextX;
+//                })
+//                .attr("y", function (d) { return d.y + padTextY; })
+//                .attr("transform", function(d) {
+//                    return "rotate(" + angle(d, -90, 90) + " " + d.x + "," + d.y + ")";
+//                })
+//                .attr("text-anchor", function (d) {
+//                    return angle(d, 0, 0) < 0 ? "start" : "end";
+//                });
+//
+//
+//
+//    }
 
-        links.data(function (d) {
-            return [d];
-        }).transition()
-                .delay(100)
-                .duration(1000)
-                .attr("d", function(d) {
-
-                    if (d.source.name == selectedCountry) {
-
-                        var x0 = r / 2 * Math.cos(d.source.startAngle - Math.PI/2.0) + svg_cx;
-                        var y0 = r / 2 * Math.sin(d.source.startAngle - Math.PI/2.0) + svg_cy;
-
-                        var xH = svg_cx;
-                        var yH = svg_cy;
-
-                        var x1 = r / 2 * Math.cos(d.target.startAngle - Math.PI/2.0) + svg_cx;
-                        var y1 = r / 2 * Math.sin(d.target.startAngle - Math.PI/2.0) + svg_cy;
-
-                        var x2 = r / 2 * Math.cos(d.target.endAngle - Math.PI/2.0) + svg_cx;
-                        var y2 = r / 2 * Math.sin(d.target.endAngle - Math.PI/2.0) + svg_cy;
-
-                        var x3 = r / 2 * Math.cos(d.source.endAngle - Math.PI/2.0) + svg_cx;
-                        var y3 = r / 2 * Math.sin(d.source.endAngle - Math.PI/2.0) + svg_cy;
-
-
-                        return "M" + x0 + "," + y0 +
-                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x1 + " " + y1 +
-                                "L" + x2 + "," + y2 +
-                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x3 + " " + y3 +
-                                "L" + x0 + "," + y0 +
-                                "Z";
-                    }
-
-                })
-                .attr("stroke", "black")
-                .attr("fill", function(d){
-                    if (d.source.name == selectedCountry) {
-                        var ranking = GetMutualRanking(d.source, d.target);
-
-                        if (ranking >= 0) {
-                            return mutualScale(ranking);
-                        }
-                        else {
-                            return "grey";
-                        }
-                    }
-
-                });
-
-        circs.data(function (d) {
-                    return [d];
-                })
-                .transition()
-                .delay(100)
-                .duration(1000)
-                .attr("cx", function (d) {
-                    d.xPrev = d.x;
-                    return d.x;
-                })
-                .attr("cy", function (d) {
-                    d.yPrev = d.y;
-                    return d.y;
-                });
-
-        circs.classed("node--source", function(d){
-            return d.name == selectedCountry;
-        });
-
-        labels.data(function (d) { return [d]; })
-                .attr("x", function (d) {
-                    var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
-                    return d.x + shift * padTextX;
-                })
-                .attr("y", function (d) { return d.y + padTextY; })
-                .attr("transform", function(d) {
-                    return "rotate(" + angle(d, -90, 90) + " " + d.x + "," + d.y + ")";
-                })
-                .attr("text-anchor", function (d) {
-                    return angle(d, 0, 0) < 0 ? "start" : "end";
-                });
-
-
-
-    }
-
-    function graph_update(){
+    function graph_update(startUp){
 
 
         links.transition()
@@ -546,29 +780,59 @@
                     }
 
                 })
-                .attr("stroke", "black");
+                .attr("opacity", 1)
+                .attr("stroke", "black")
+                .attr("fill", function (d) {
+                    if (d.source.name == selectedCountry) {
+                        var ranking = GetMutualRanking(d.source, d.target);
+                        return (ranking >= 0) ? mutualScale(ranking) : "grey";
+                    }
+
+                });
 
         circs.data(function (d) {
             return [d];
-        }).sort(countrySorting)
+        })
                 .transition()
                 .delay(100)
                 .duration(1000)
                 .each("start", function() { intransition = true; })
                 .attrTween("cx", function(d, i, a){
-                    return function(t){
-                        var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
-                        var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
-                        var delta = theta2-theta1;
-                        return r/2*Math.cos(theta1 + delta*t)+ svg_cx;
-                    };
+
+//                    if(startUp){
+                        d.xPrev = d.x;
+//                        startUp = false;
+                    if(startUp){
+                        return d3.interpolate(a,d.x);
+                    }
+
+                    else {
+
+                        return function (t) {
+                            var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
+                            var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
+                            var delta = theta2 - theta1;
+                            return r / 2 * Math.cos(theta1 + delta * t) + svg_cx;
+                        };
+                    }
                 })
                 .attrTween("cy", function(d, i, a){
-                    return function(t){
-                        var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
-                        var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
-                        var delta = theta2-theta1;
-                        return r/2*Math.sin(theta1 + delta*t)+ svg_cy;
+
+                    //if(startUp){
+                        d.yPrev = d.y;
+//                        startUp = false;
+                    if(startUp){
+
+                            return d3.interpolate(a,d.y);
+                    }
+
+                    else {
+                        return function (t) {
+                            var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
+                            var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
+                            var delta = theta2 - theta1;
+                            return r / 2 * Math.sin(theta1 + delta * t) + svg_cy;
+                        }
                     }
                 })
                 .each("end", function() { intransition = false; });
@@ -578,7 +842,7 @@
         });
 
 
-        labels.data(function (d) { return [d]; }).sort(countrySorting)
+        labels.data(function (d) { return [d]; })
                 .attr("x", function (d) {
                     var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
                     return d.x + shift * padTextX;
@@ -600,24 +864,41 @@
         return a > threshold ? a - 180 : a;
     }
 
+//    //Sorting functions (New or cached sorting value)
+//    function countrySorting(a, b){
+//        if (countrySortingVal == "name") {
+//            return d3.ascending(a[countrySortingVal], b[countrySortingVal]);
+//        }
+//        else{
+//            return b[countrySortingVal] - a[countrySortingVal];
+//        }
+//    }
+
     //Sorting functions (New or cached sorting value)
-    function countrySorting(a, b){
-        if (countrySortingVal == "name") {
-            return d3.ascending(a[countrySortingVal], b[countrySortingVal]);
-        }
-        else{
-            return b[countrySortingVal] - a[countrySortingVal];
-        }
+    function compareCountriesNew(a, b){
+        if (countrySortingVal == "name") {          return d3.ascending(a["name"], b["name"]); }
+        if (countrySortingVal == "population") {    return b["population"] - a["population"]; }
+        if (countrySortingVal == "gdp") {           return b["gdp"] - a["gdp"]; }
     }
+    function compareCountriesCurrent(a, b){
+        if (countrySortingValPrev == "name") {             return d3.ascending(a["name"], b["name"]); }
+        if (countrySortingValPrev == "population") {       return b["population"] - a["population"]; }
+        if (countrySortingValPrev == "gdp") {              return b["gdp"] - a["gdp"]; }
+    }
+
+
+
 
     //////////////////////////////////////
     // Mouse Events
     //////////////////////////////////////
     function mouseOverEvent(d){
 
+
         if (!intransition) {
 
             selectedCountry = d.name;
+
 
             circs.each(function (n) {
                 n.target = false;
@@ -675,6 +956,9 @@
                     .classed("hidden", function (n) {   return !(n.target || n.source); });
             labels
                     .classed("hidden", function (n) {   return !(n.target || n.source); });
+
+            //UpdateAster();
+
         }
     }
 
@@ -688,6 +972,30 @@
         var val = -1
         targetExporter.top_partners.forEach(function (partner, i) {
             if (partner.country_id == sourceExporter.country_id) {  val = i; }} )
+        return val;
+    }
+
+    function GetProximityRanking(sourceExporter, targetExporter){
+
+        var proximities = [];
+        sourceExporter.top_partners.forEach( function(e,i) {
+            var dx = targetExporter.latitude - sourceExplorer.latitude;
+            var dy = targetExporter.longitude - sourceExplorer.longitude;
+            var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+            proximities.push( { })
+        });
+
+        var val = -1
+        targetExporter.top_partners.forEach(function (partner, i) {
+            if (partner.country_id == sourceExporter.country_id) {  val = i; }} )
+        return val;
+    }
+
+    function GetExportRanking(sourceExporter, targetExporter){
+
+        var val = -1
+        sourceExporter.top_partners.forEach(function (partner, i) {
+            if (partner.country_id == targetExporter.country_id) {  val = i; }} )
         return val;
     }
 
