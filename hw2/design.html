@@ -118,7 +118,7 @@
         //Init graph links
 
         graph.nodes = restructuredData[yearIndex];
-        graph.nodes.sort(compareCountriesCurrent);
+        graph.nodes.sort(compareCountriesNew);
         graph.links = [];
         graph.nodes.forEach(function (d, i) {
             graph.nodes.forEach(function (e, j) {
@@ -355,7 +355,7 @@
                 .append("path")
                 .attr("class", "trade_link")
                 .attr("stroke", "black")
-                .attr("opacity", 0);
+                .attr("opacity", 1);
 
         links.exit().remove();
         paths.exit().remove();
@@ -413,7 +413,7 @@
                 .outerRadius(r);
 
         pie = d3.layout.pie()
-                .sort(compareCountriesCurrent) // Sorting by categories
+                .sort(compareCountriesNew) // Sorting by categories
                 .value(function(d, i) {
                     return 1;  // We want an equal pie share/slice for each point
                 });
@@ -744,6 +744,10 @@
 //
 //    }
 
+
+
+    function SelectLinks(){}
+
     function graph_update(startUp){
 
 
@@ -863,16 +867,6 @@
         var a = (d.startAngle + d.endAngle) * 90 / Math.PI + offset;
         return a > threshold ? a - 180 : a;
     }
-
-//    //Sorting functions (New or cached sorting value)
-//    function countrySorting(a, b){
-//        if (countrySortingVal == "name") {
-//            return d3.ascending(a[countrySortingVal], b[countrySortingVal]);
-//        }
-//        else{
-//            return b[countrySortingVal] - a[countrySortingVal];
-//        }
-//    }
 
     //Sorting functions (New or cached sorting value)
     function compareCountriesNew(a, b){
