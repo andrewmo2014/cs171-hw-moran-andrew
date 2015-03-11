@@ -15,13 +15,13 @@
         float: left;
     }
 
-    .link {
-        stroke: gray;
-        stroke-width: .8px;
-        stroke-opacity: .4;
+    .chord {
+        stroke: black;
+        /*stroke-width: .8px;*/
+        /*stroke-opacity: .4;*/
     }
 
-    .circ{
+    .node{
         fill: white;
         stroke: #000;
         stroke-width: .9px;
@@ -32,10 +32,10 @@
     }
 
     .node--target{
-        fill: white;
+        fill: black;
     }
 
-    .link--source{
+    .chord--source{
         stroke: black;
         stroke-opacity: 1;
     }
@@ -76,7 +76,7 @@
     <!--Legend & Select Attributes Panel-->
     <div id="right_panel">
         <form>
-            <label><input type="checkbox" name="combine" value="combine" checked> Combine Like Continents</label>
+            <label><input onchange="" type="checkbox" name="continent_sorting_val" value="continent_sorting_val" checked> Combine Like Continents</label>
         </form>
         <div>
             <form>
@@ -106,10 +106,14 @@
     //// Apply Filters
     /////////////////////////////////
 
+    var oldNodeData, nodesOld, oldPie, oldPieData;
+
     //Update Data due to filters
     function UpdateFilters() {
         countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
         asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
+        continentSortingVal = d3.select("input[value=\"continent_sorting_val\"]").node().checked;
+        console.log( continentSortingVal );
         CompleteForce();
     }
 
@@ -118,7 +122,6 @@
         //Init graph links
 
         graph.nodes = restructuredData[yearIndex];
-        graph.nodes.sort(compareCountriesNew);
         graph.links = [];
         graph.nodes.forEach(function (d, i) {
             graph.nodes.forEach(function (e, j) {
@@ -166,7 +169,8 @@
                             'longitude': data[i].longitude,
                             'latitude':data[i].latitude,
                             'country_id':data[i].country_id,
-                            'top_partners':data[i].years[j].top_partners
+                            'top_partners':data[i].years[j].top_partners,
+                            'year':data[i].years[j].year
                         });
             }
         }
@@ -184,11 +188,14 @@
 //        InitializeCircular()
 //        CompleteCircular();
 
-        UpdateFilters();
-        EncodeCircular();
-        CompleteCircular();
-        UpdateCircular();
+//        if( nodes)
+//            oldNodeData = nodes.data();
 
+        UpdateFilters();
+        ConstructPieLayout();
+
+        BuildComponents();
+        UpdateViz();
 
     });
 
@@ -196,10 +203,12 @@
 
     var countrySortingE = document.getElementById("country_sorting_val");
     var countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
-    var countrySortingValPrev = countrySortingVal;                         //Did sorting change
+    var countrySortingValPrev = countrySortingVal;
 
     var asterSortingE = document.getElementById("aster_sorting_val");
     var asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
+
+    var continentSortingVal = d3.select("input[value=\"continent_sorting_val\"]").node().checked;
 
     var screen_width = 1293;
     var screen_height = 710;
@@ -213,9 +222,16 @@
     //Grouping Reference
     var svg = d3.select("#bottom_left_panel").append("svg")
             .attr("width", svg_width)
-            .attr("height", svg_height);
+            .attr("height", svg_height)
+            .attr("transform", "translate(" + svg_width/2 + "," + svg_height/2 + ")");
 
-    var g = svg.append("g");
+    //Group Ref in order of drawing
+    var g_border = svg.append("g").attr("class", "border");
+    var g_chords = svg.append("g").attr("class", "chords");
+    var g_nodes = svg.append("g").attr("class", "nodes");
+    var g_labels = svg.append("g").attr("class", "labels");
+
+//    var g = svg.append("g");
 
     //Data Holders
     var graph = {nodes: [], links: []};
@@ -236,10 +252,10 @@
             .linkDistance(10)
             .linkStrength(0);
     // Pie Layout
-    var r, arc, pie, arc_outer;
+    var r, arc, pie, arc_outer, pieData;
     var R_FACTOR = 1.45;
     // DOM
-    var nodes, circs, labels, paths, links;
+    var nodes, circs, labels, paths, links, chords;
 
     var startUp = true;
     var selectedCountry = "United States";
@@ -263,212 +279,145 @@
     ////////////////////
 
     //Apply Input Interaction
-    var inputs = d3.selectAll("input");
-    inputs.on("input", function(){
+//    var inputs = d3.selectAll("input");
+    d3.select("input[id=\"slider-time\"]").on("input", function() {
+
+        console.log(true);
+
         yearIndex = timeSlider.value - timeSlider.min;
 
         UpdateFilters();
-        EncodeCircular();
-        CompleteCircular();
-        UpdateCircular();
+        ConstructPieLayout();
 
-
-//        UpdateFilters();
-//
-//
-//
-//
-//        //Initialize First G
-//        InitializeCircular()
-//        CompleteCircular();
-
-
-        //SortCircular();
+        BuildComponents();
+        UpdateViz();
     });
+
+
+    d3.select("input[value=\"continent_sorting_val\"]").on("change", function() {
+
+
+        yearIndex = timeSlider.value - timeSlider.min;
+
+        UpdateFilters();
+        ConstructPieLayout();
+
+        BuildComponents();
+        UpdateViz();
+    });
+
 
     //////////////////////////////////////
     // Read In Data
     //////////////////////////////////////
     d3.json( "data/countries_1995_2012.json", function(error, data) {
         //Calculate year range
-
-
         restructuredData = CalculateRestructuredData(data);     //New Data
+
         UpdateFilters();
+        ConstructPieLayout();
 
-
-        EncodeCircular();
-        CompleteCircular();
-        UpdateCircular();
-
-        //Initialize First Graph
-        //InitializeCircular();
-        //CompleteCircular();
-
-
-
-        //SortCircular();
-
-
-        //InitializeAster();
-
-
+        BuildComponents();
+        UpdateViz();
     });
 
 
-    function EncodeCircular(){
-//        RemoveGraphLinks();
-        AddGraphLinks();
+    function BuildComponents(){
 
-        //Build Graph Nodes
-        nodes = g.selectAll("g.node")
-                .data(graph.nodes);
+        AddLinks();
+        AddNodes();
+        AddLabels();
+
+        chords.exit().remove();
+        nodes.exit().remove();
+        labels.exit().remove();
+    }
+
+    function AddLinks(){
+
+        chords = g_chords.selectAll("path")
+                .data( graph.links );
+
+        chords.enter()
+                .append("path")
+                .attr("class", "chord")
+                .attr("name", function(d){
+                    return d.source.name + "---" + d.target.name;
+                })
+                .attr("stroke", "black")
+                .attr("fill", "grey");
+    }
+
+    function AddNodes(){
+
+
+        //console.log(pieData);
+
+        nodes = g_nodes.selectAll("circle")
+                .data(pieData);
+
 
         nodes.enter()
-                .append("g")
+                .append("circle")
                 .attr("class", "node")
+                .attr("name", function(d){
+                    return d.name;
+                })
+                .attr("r", 6)
+//                .attr("cx", function (d){
+//                    return svg_cx;
+//                })
+//                .attr("cy", function (d){   return svg_cy;  })
+                .attr("transform", function(d) {
+                        //console.log(d.name);
+                        //console.log( angle(d, -90, 90) );
+                        return "translate(" + svg_cx + "," + svg_cy + ")";
+                })
                 .on("mouseover", mouseOverEvent)
                 .on("mouseout", mouseOutEvent);
 
-        AddCircles();
-        AddLabels();
-
-        labels.exit().remove();
-        circs.exit().remove();
-        nodes.exit().remove();
-    }
-
-
-
-    function AddGraphLinks(){
-        paths = g.selectAll("g.paths")
-                .data(graph.links);
-
-        paths.enter()
-                .append("g").attr("class", "paths")
-
-        links = paths.selectAll("path").data( function(d){
-            return [d];
-        });
-
-        links.enter()
-                .append("path")
-                .attr("class", "trade_link")
-                .attr("stroke", "black")
-                .attr("opacity", 1);
-
-        links.exit().remove();
-        paths.exit().remove();
-    }
-
-    function RemoveGraphLinks(){
-        paths = g.selectAll("g.paths")
-                .data(graph.links);
-        links = paths.selectAll("path").data( function(d){ return [d]; });
-        links.remove();
-        paths.remove();
-    }
-
-    function AddCircles(){
-
-        circs = nodes.selectAll("circle")
-                .data( function(d){
-                    return [d];
-                });
-
-        circs.enter()
-                .append("circle")
-                .attr("class", "circ")
-                .attr("r", 6)
-                .attr("cx", function (d){
-                    return svg_cx;
-                })
-                .attr("cy", function (d){
-                    return svg_cy;
-                });
+//        nodes.enter().append("path")
+//                .attr("fill", function(d, i){
+//                    return "blue";
+//                })
+//                .attr("d", function (d) {
+//                    // log the result of the arc generator to show how cool it is :)
+//                    console.log(arc(d));
+//                    return arc(d);
+//                })
+//                .attr("transform", "translate(" + svg_cx + "," + svg_cy +")")
+//                .on("mouseover", mouseOverEvent)
+//                .on("mouseout", mouseOutEvent);
 
     }
 
     function AddLabels(){
-        labels = nodes.selectAll("text")
-                .data( function(d){ return [d]; });
+        labels = g_labels.selectAll("text")
+                .data( pieData );
 
         labels.enter()
-                .append("text");
-
-        labels.text(function (d) {  return d.name;  })
+                .append("text")
+                .attr("class", "node")
+                .attr("name", function(d){
+                    return d.name;
+                })
+                .text(function (d) {  return d.name;  })
                 .attr("text-anchor", "left")
-                .attr("x", function (d) { return svg_cx + padTextX; })
-                .attr("y", function (d) { return svg_cy + padTextY; })
-                .attr("font-family", "sans-serif")
-                .attr("font-size", "10px")
-                .attr("fill", "black");
-    }
-
-    function InitializePieLayout(rFactor){
-        //Multiplier to make custom circles of various radius
-        r = Math.min(svg_height, svg_width)/rFactor;
-
-        arc = d3.svg.arc()
-                .outerRadius(r);
-
-        pie = d3.layout.pie()
-                .sort(compareCountriesNew) // Sorting by categories
-                .value(function(d, i) {
-                    return 1;  // We want an equal pie share/slice for each point
-                });
-    }
-
-    //Initilaize
-//    function InitializeCircular(){
-//
-//        AddGraphLinks();
-//
-//        //Build Graph Nodes
-//        nodes = g.selectAll("g.node")
-//                .data(graph.nodes);
-//
-//        nodes.enter()
-//                .append("g")
-//                .attr("class", "node")
-//                .on("mouseover", mouseOverEvent)
-//                .on("mouseout", mouseOutEvent);
-//
-//        circs = nodes.selectAll("circle")
-//                .data( function(d){
-//                    return [d];
-//                });
-//
-//        circs.enter()
-//                .append("circle")
-//                .attr("class", "circ");
-//
-//        circs.attr("r", 6)
-//                .attr("cx", function (d){
-//                    return svg_cx;
-//                })
-//                .attr("cy", function (d){
-//                    return svg_cy;
-//                });
-//
-//        labels = nodes.selectAll("text")
-//                .data( function(d){ return [d]; });
-//
-//        labels.enter()
-//                .append("text");
-//
-//        labels.text(function (d) {  return d.name;  })
-//                .attr("text-anchor", "left")
 //                .attr("x", function (d) { return svg_cx + padTextX; })
 //                .attr("y", function (d) { return svg_cy + padTextY; })
-//                .attr("font-family", "sans-serif")
-//                .attr("font-size", "10px")
-//                .attr("fill", "black");
-//
-//        labels.exit().remove();
-//        circs.exit().remove();
-//        nodes.exit().remove();
-//    }
+                .attr("x", function (d) { return 0; })
+                .attr("y", function (d) { return 0; })
+                .attr("transform", function(d) {
+                    //console.log(d.name);
+                    //console.log( angle(d, -90, 90) );
+                    return "translate(" + (svg_cx) + "," + (svg_cy) + ")rotate(" + 0 + ")";
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black")
+                .on("mouseover", mouseOverEvent)
+                .on("mouseout", mouseOutEvent);
+    }
 
 
 //    function UpdateAster(){
@@ -614,10 +563,22 @@
 
 
     //Part 2: Circular
-    function CompleteCircular() {
+    function ConstructPieLayout() {
 
-        InitializePieLayout(R_FACTOR);
-        pie(graph.nodes).map(function (d, i) {
+        console.log("eher");
+
+        r = .5*Math.min(svg_height, svg_width)/R_FACTOR;
+
+        arc = d3.svg.arc()
+                .outerRadius(r);
+
+        pie = d3.layout.pie()
+                .sort(compareCountries) // Sorting by categories
+                .value(function(d, i) {
+                    return 1;  // We want an equal pie share/slice for each point
+                });
+
+        pieData = pie(graph.nodes).map(function (d, i) {
 
             // Needed to caclulate the centroid
             d.innerRadius = 0;
@@ -626,325 +587,163 @@
             d.data.startAngle = d.startAngle;
             d.data.endAngle = d.endAngle;
 
-            d.data.xPrev = d.data.x;
-            d.data.yPrev = d.data.y;
-
-            d.data.x = arc.centroid(d)[0] + svg_cx;
-            d.data.y = arc.centroid(d)[1] + svg_cy;
+            d.data.x = arc.centroid(d)[0]*2.0 + svg_cx;
+            d.data.y = arc.centroid(d)[1]*2.0 + svg_cy;
 
             return d.data;
         });
 
-//        if (startUp) {
-//            graph_start();
-//            startUp = false;
-//        }
-//        else{
-//            graph_update();
-//        }
-    }
-//
-    function UpdateCircular(){
-        if (startUp) {
-            graph_update(true);
-            startUp = false;
-        }
-        else{
-            graph_update(false);
-        }
     }
 
+    function UpdateViz(){
+        graph_update();
+        if (startUp) { startUp = false; }
+    }
 
-    //Needed to remove transition to prevent lag (for force layout)
-    //Setting delay and duration to 0 still produced lag
-//    function graph_start(){
-//
-//        links.data(function (d) {
-//            return [d];
-//        }).transition()
-//                .delay(100)
-//                .duration(1000)
-//                .attr("d", function(d) {
-//
-//                    if (d.source.name == selectedCountry) {
-//
-//                        var x0 = r / 2 * Math.cos(d.source.startAngle - Math.PI/2.0) + svg_cx;
-//                        var y0 = r / 2 * Math.sin(d.source.startAngle - Math.PI/2.0) + svg_cy;
-//
-//                        var xH = svg_cx;
-//                        var yH = svg_cy;
-//
-//                        var x1 = r / 2 * Math.cos(d.target.startAngle - Math.PI/2.0) + svg_cx;
-//                        var y1 = r / 2 * Math.sin(d.target.startAngle - Math.PI/2.0) + svg_cy;
-//
-//                        var x2 = r / 2 * Math.cos(d.target.endAngle - Math.PI/2.0) + svg_cx;
-//                        var y2 = r / 2 * Math.sin(d.target.endAngle - Math.PI/2.0) + svg_cy;
-//
-//                        var x3 = r / 2 * Math.cos(d.source.endAngle - Math.PI/2.0) + svg_cx;
-//                        var y3 = r / 2 * Math.sin(d.source.endAngle - Math.PI/2.0) + svg_cy;
-//
-//
-//                        return "M" + x0 + "," + y0 +
-//                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x1 + " " + y1 +
-//                                "L" + x2 + "," + y2 +
-//                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x3 + " " + y3 +
-//                                "L" + x0 + "," + y0 +
-//                                "Z";
-//                    }
-//
-//                })
-//                .attr("stroke", "black")
-//                .attr("fill", function(d){
-//                    if (d.source.name == selectedCountry) {
-//                        var ranking = GetMutualRanking(d.source, d.target);
-//
-//                        if (ranking >= 0) {
-//                            return mutualScale(ranking);
-//                        }
-//                        else {
-//                            return "grey";
-//                        }
-//                    }
-//
-//                });
-//
-//        circs.data(function (d) {
-//                    return [d];
-//                })
-//                .transition()
-//                .delay(100)
-//                .duration(1000)
-//                .attrTween("cx", function (d, i, a) {
-//                    d.xPrev = d.x;
-//                    return d3.interpolate(a,d.x);
-//                })
-//                .attrTween("cy", function (d, i, a) {
-//                    d.yPrev = d.y;
-//                    return d3.interpolate(a,d.y);
-//                });
-//
-//        circs.classed("node--source", function(d){
-//            return d.name == selectedCountry;
-//        });
-//
-//        labels.data(function (d) { return [d]; })
-//                .attr("x", function (d) {
-//                    var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
-//                    return d.x + shift * padTextX;
-//                })
-//                .attr("y", function (d) { return d.y + padTextY; })
-//                .attr("transform", function(d) {
-//                    return "rotate(" + angle(d, -90, 90) + " " + d.x + "," + d.y + ")";
-//                })
-//                .attr("text-anchor", function (d) {
-//                    return angle(d, 0, 0) < 0 ? "start" : "end";
-//                });
-//
-//
-//
-//    }
+    function UpdateChords(transTime){
 
-
-
-    function SelectLinks(){}
-
-    function graph_update(startUp){
-
-
-        links.transition()
-                .delay(100)
-                .duration(1000)
-                .attr("d", function(d) {
-
+        chords.transition()
+                .delay(0)
+                .duration(transTime)
+                .attr("d", function (d) {
                     if (d.source.name == selectedCountry) {
-
-
-                        var x0 = r / 2 * Math.cos(d.source.startAngle - Math.PI/2.0) + svg_cx;
-                        var y0 = r / 2 * Math.sin(d.source.startAngle - Math.PI/2.0) + svg_cy;
-
-                        var xH = svg_cx;
-                        var yH = svg_cy;
-
-                        var x1 = r / 2 * Math.cos(d.target.startAngle - Math.PI/2.0) + svg_cx;
-                        var y1 = r / 2 * Math.sin(d.target.startAngle - Math.PI/2.0) + svg_cy;
-
-                        var x2 = r / 2 * Math.cos(d.target.endAngle - Math.PI/2.0) + svg_cx;
-                        var y2 = r / 2 * Math.sin(d.target.endAngle - Math.PI/2.0) + svg_cy;
-
-                        var x3 = r / 2 * Math.cos(d.source.endAngle - Math.PI/2.0) + svg_cx;
-                        var y3 = r / 2 * Math.sin(d.source.endAngle - Math.PI/2.0) + svg_cy;
-
-
-                        return "M" + x0 + "," + y0 +
-                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x1 + " " + y1 +
-                                "L" + x2 + "," + y2 +
-                                "C" + xH + " " + yH + " " + xH + " " + yH + " " + x3 + " " + y3 +
-                                "L" + x0 + "," + y0 +
-                                "Z";
+                        return DrawPath(d.source, d.target);
                     }
-
                 })
-                .attr("opacity", 1)
                 .attr("stroke", "black")
                 .attr("fill", function (d) {
+                    var nullColor = "grey";
                     if (d.source.name == selectedCountry) {
                         var ranking = GetMutualRanking(d.source, d.target);
-                        return (ranking >= 0) ? mutualScale(ranking) : "grey";
+                        return (ranking >= 0) ? mutualScale(ranking) : nullColor;
                     }
-
+                    else{
+                        return nullColor
+                    }
                 });
+    }
 
-        circs.data(function (d) {
-            return [d];
-        })
-                .transition()
-                .delay(100)
+    function UpdateNodes(){
+
+        nodes.transition()
+                .delay(0)
                 .duration(1000)
-                .each("start", function() { intransition = true; })
-                .attrTween("cx", function(d, i, a){
-
-//                    if(startUp){
-                        d.xPrev = d.x;
-//                        startUp = false;
-                    if(startUp){
-                        return d3.interpolate(a,d.x);
-                    }
-
-                    else {
-
-                        return function (t) {
-                            var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
-                            var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
-                            var delta = theta2 - theta1;
-                            return r / 2 * Math.cos(theta1 + delta * t) + svg_cx;
-                        };
-                    }
+                .each("start", function(d) {
+                    intransition = true;
                 })
-                .attrTween("cy", function(d, i, a){
-
-                    //if(startUp){
-                        d.yPrev = d.y;
-//                        startUp = false;
-                    if(startUp){
-
-                            return d3.interpolate(a,d.y);
-                    }
-
-                    else {
-                        return function (t) {
-                            var theta1 = Math.atan2(d.yPrev - svg_cy, d.xPrev - svg_cx);
-                            var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
-                            var delta = theta2 - theta1;
-                            return r / 2 * Math.sin(theta1 + delta * t) + svg_cy;
-                        }
-                    }
+                .attrTween("transform", function(d, i, a) {
+                    var oldCoords = d3.transform(d3.select(this).attr("transform")).translate;
+                    return ParameterizeNode(oldCoords, [d.x, d.y]);
                 })
-                .each("end", function() { intransition = false; });
+                .each("end", function(d) {
+                    intransition = false;
+                })
 
-        circs.classed("node--source", function(d){
+        nodes.classed("node--source", function(d){
             return d.name == selectedCountry;
         });
+    }
 
+    function UpdateLabels(){
 
-        labels.data(function (d) { return [d]; })
-                .attr("x", function (d) {
+        labels.transition()
+                .delay(0)
+                .duration(1000)
+                .each("start", function(d){
+
+                    var oldRotate = d3.transform(d3.select(this).attr("transform")).rotate;
+                    var oldCoords = d3.transform(d3.select(this).attr("transform")).translate;
+
+                    var leftHem = oldCoords[0] <= svg_cx + padTextY ? true : false;
+                    var tx = (leftHem) ? oldRotate + 180 : oldRotate;
+                    var ty = (leftHem) ? 2*padTextY : 0;
+
+                    d3.select(this).attr("transform", function (d) {
+                        return "translate(" + oldCoords[0] + "," + oldCoords[1] + ")rotate(" + tx + ")translate(" + 0 + "," + ty + ")";
+                    });
+                    d3.select(this).attr("text-anchor", function (d) {
+                        return "start";
+
+                    });
+                })
+                .attrTween("transform", function(d, i, a) {
+                    var oldCoords = d3.transform(d3.select(this).attr("transform")).translate;
+                    var oldRotate = d3.transform(d3.select(this).attr("transform")).rotate;
+                    return ParameterizeLabel(oldCoords, d, [padTextX,padTextY], oldRotate);
+
+                })
+                .each("end", function(d){
                     var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
-                    return d.x + shift * padTextX;
-                })
-                .attr("y", function (d) { return d.y + padTextY; })
-                .attr("transform", function(d) {
-                    return "rotate(" + angle(d, -90, 90) + " " + d.x + "," + d.y + ")";
-                })
-                .attr("text-anchor", function (d) {
-                    return angle(d, 0, 0) < 0 ? "start" : "end";
+                    d3.select(this).attr("transform", function (d) {
+                        return "translate(" + d.x + "," + d.y +
+                                ")rotate(" + angle(d, -90, 90) +
+                                ")translate(" + shift*padTextX + "," + padTextY + ")";
+                    });
+                    d3.select(this).attr("text-anchor", function (d) {
+                        return angle(d, 0, 0) < 0 ? "start" : "end";
+
+                    });
                 });
+    }
+
+    function graph_update(){
+
+        UpdateChords(1000);
+        UpdateNodes();
+        UpdateLabels();
+
+        if (countrySortingValPrev != countrySortingVal){
+            countrySortingValPrev = countrySortingVal;
+        }
 
     }
 
-    // Updated Angle Calculation Function...
-    function angle(d, offset, threshold) {
-        //var theta = Math.atan2(d.y - svg_height/2, d.x - svg_width/2) * 180 / Math.PI;
-        var a = (d.startAngle + d.endAngle) * 90 / Math.PI + offset;
-        return a > threshold ? a - 180 : a;
-    }
-
+    //////////////////////////////////////
+    // Country Sorting
+    //////////////////////////////////////
+    //Sorting functions (New or cached sorting value)
     //Sorting functions (New or cached sorting value)
     function compareCountriesNew(a, b){
         if (countrySortingVal == "name") {          return d3.ascending(a["name"], b["name"]); }
         if (countrySortingVal == "population") {    return b["population"] - a["population"]; }
         if (countrySortingVal == "gdp") {           return b["gdp"] - a["gdp"]; }
     }
-    function compareCountriesCurrent(a, b){
-        if (countrySortingValPrev == "name") {             return d3.ascending(a["name"], b["name"]); }
-        if (countrySortingValPrev == "population") {       return b["population"] - a["population"]; }
-        if (countrySortingValPrev == "gdp") {              return b["gdp"] - a["gdp"]; }
+
+    function compareCountries(a, b) {
+        if (continentSortingVal) {
+            var ans = d3.ascending(a["continent"], b["continent"]);
+            return (ans != 0) ? ans : compareCountriesNew(a,b);
+        }
+        else{
+            return compareCountriesNew(a,b);
+        }
     }
-
-
-
 
     //////////////////////////////////////
     // Mouse Events
     //////////////////////////////////////
     function mouseOverEvent(d){
 
-
         if (!intransition) {
-
             selectedCountry = d.name;
 
-
-            circs.each(function (n) {
+            nodes.each(function (n) {
                 n.target = false;
                 n.source = false;
             })
-            circs.classed("hidden", false);
+            nodes.classed("hidden", false);
 
-            links
-                    .classed("link--source", function (l) {
+            chords
+                    .classed("chord--source", function (l) {
                         if (l.source === d) {
                             l.source.source = true;
                             return l.target.target = true;
                         }
-                    })
-                    .attr("d", function (d) {
-
-                        if (d.source.name == selectedCountry) {
-
-                            var x0 = r / 2 * Math.cos(d.source.startAngle - Math.PI / 2.0) + svg_cx;
-                            var y0 = r / 2 * Math.sin(d.source.startAngle - Math.PI / 2.0) + svg_cy;
-
-                            var xH = svg_cx;
-                            var yH = svg_cy;
-
-                            var x1 = r / 2 * Math.cos(d.target.startAngle - Math.PI / 2.0) + svg_cx;
-                            var y1 = r / 2 * Math.sin(d.target.startAngle - Math.PI / 2.0) + svg_cy;
-
-                            var x2 = r / 2 * Math.cos(d.target.endAngle - Math.PI / 2.0) + svg_cx;
-                            var y2 = r / 2 * Math.sin(d.target.endAngle - Math.PI / 2.0) + svg_cy;
-
-                            var x3 = r / 2 * Math.cos(d.source.endAngle - Math.PI / 2.0) + svg_cx;
-                            var y3 = r / 2 * Math.sin(d.source.endAngle - Math.PI / 2.0) + svg_cy;
-
-
-                            return "M" + x0 + "," + y0 +
-                                    "C" + xH + " " + yH + " " + xH + " " + yH + " " + x1 + " " + y1 +
-                                    "L" + x2 + "," + y2 +
-                                    "C" + xH + " " + yH + " " + xH + " " + yH + " " + x3 + " " + y3 +
-                                    "L" + x0 + "," + y0 +
-                                    "Z";
-                        }
-
-                    })
-                    .attr("stroke", "black")
-                    .attr("fill", function (d) {
-                        if (d.source.name == selectedCountry) {
-                            var ranking = GetMutualRanking(d.source, d.target);
-                            return (ranking >= 0) ? mutualScale(ranking) : "grey";
-                        }
-
                     });
-            circs
+
+            UpdateChords(0);
+
+            nodes
                     .classed("node--target", function (n) { return n.target;    })
                     .classed("node--source", function (n) { return n.source;    })
                     .classed("hidden", function (n) {   return !(n.target || n.source); });
@@ -957,10 +756,14 @@
     }
 
     function mouseOutEvent(d){
-        links.classed("link--target", false).classed("link--source", false);
-        circs.classed("node--target", false).classed("hidden", false);
+        chords.classed("link--target", false).classed("link--source", false);
+        nodes.classed("node--target", false).classed("hidden", false);
         labels.classed("hidden", false);
     }
+
+    //////////////////////////////////////
+    // Country Rankings
+    //////////////////////////////////////
 
     function GetMutualRanking(sourceExporter, targetExporter){
         var val = -1
@@ -991,6 +794,128 @@
         sourceExporter.top_partners.forEach(function (partner, i) {
             if (partner.country_id == targetExporter.country_id) {  val = i; }} )
         return val;
+    }
+
+    //////////////////////////////////////
+    // Math Helpers
+    //////////////////////////////////////
+    // Updated Angle Calculation Function...
+    function angle(d, offset, threshold) {
+        //var theta = Math.atan2(d.y - svg_height/2, d.x - svg_width/2) * 180 / Math.PI;
+        var a = (d.startAngle + d.endAngle) * 90 / Math.PI + offset;
+        return a > threshold ? a - 180 : a;
+    }
+
+    function Polar2Cartesian(theta, radius){
+
+        var x_coord = radius * Math.cos(theta - Math.PI/2.0) + svg_cx;
+        var y_coord = radius * Math.sin(theta - Math.PI/2.0) + svg_cy;
+        return {"x" : x_coord, "y" : y_coord};
+    }
+
+    function DrawPath(source, target) {
+        var p = "M" + Polar2Cartesian( source.startAngle, r).x + "," + Polar2Cartesian( source.startAngle, r).y +
+                "C" + svg_cx                                   + " " + svg_cy                                   +
+                " " + svg_cx                                   + " " + svg_cy                                   +
+                " " + Polar2Cartesian( target.startAngle, r).x + " " + Polar2Cartesian( target.startAngle, r).y +
+                "L" + Polar2Cartesian( target.endAngle, r).x   + "," + Polar2Cartesian( target.endAngle, r).y   +
+                "C" + svg_cx                                   + " " + svg_cy                                   +
+                " " + svg_cx                                   + " " + svg_cy                                   +
+                " " + Polar2Cartesian( source.endAngle,r).x    + " " + Polar2Cartesian( source.endAngle, r).y   +
+                "L" + Polar2Cartesian( source.startAngle,r).x  + "," + Polar2Cartesian( source.startAngle, r).y +
+                "Z";
+        return p;
+    }
+
+    function ParameterizeChord(old_source, old_target, source, target) {
+        return function (t) {
+
+            var s1 = ParameterizePoint(
+                    [old_source[0], old_source[1]],
+                    [Polar2Cartesian(source.startAngle, r).x, Polar2Cartesian(source.startAngle, r).y],
+                    t
+            );
+
+            var s2 = ParameterizePoint(
+                    [old_target[0], old_target[1]],
+                    [Polar2Cartesian(target.startAngle, r).x, Polar2Cartesian(target.startAngle, r).y],
+                    t
+            );
+            var s3 = ParameterizePoint(
+                    [old_target[0], old_target[1]],
+                    [Polar2Cartesian(target.endAngle, r).x, Polar2Cartesian(target.endAngle, r).y],
+                    t
+            );
+            var s4 = ParameterizePoint(
+                    [old_source[0], old_source[1]],
+                    [Polar2Cartesian(source.endAngle, r).x, Polar2Cartesian(source.endAngle, r).y],
+                    t
+            );
+
+            return DrawPath(source, target);
+
+        }
+    }
+
+    function ParameterizeNode(old_d, new_d) {
+        return function (t) {
+
+            var theta1 = Math.atan2(old_d[1] - svg_cy, old_d[0] - svg_cx);
+            var theta2 = Math.atan2(new_d[1] - svg_cy, new_d[0] - svg_cx);
+            var delta = theta2 - theta1;
+
+            var dx = r * Math.cos(theta1 + delta * t) + svg_cx;
+            var dy = r * Math.sin(theta1 + delta * t) + svg_cy;
+
+            return "translate(" + (dx) + "," + (dy) + ")";
+        }
+    }
+
+    function ParameterizePoint(old_d, new_d, t) {
+
+            var theta1 = Math.atan2(old_d[1] - svg_cy, old_d[0] - svg_cx);
+            var theta2 = Math.atan2(new_d[1] - svg_cy, new_d[0] - svg_cx);
+            var delta = theta2 - theta1;
+
+            var dx = r * Math.cos(theta1 + delta * t) + svg_cx;
+            var dy = r * Math.sin(theta1 + delta * t) + svg_cy;
+
+            return [ dx , dy ];
+    }
+
+    function ParameterizeLabel(old_d, d, offset_d, old_rotate) {
+        return function (t) {
+
+            //Label Orientation - if on left hemisphere
+            var wasFlipLabel = old_d[0] < svg_cx + padTextY ? true : false;
+            var shouldFlipLabel = d.x < svg_cx + padTextY ? true : false;
+
+            //Label adjustments
+            var a = (!wasFlipLabel) ? angle(d, -90, 90) : angle(d, -90, 90) - 180;
+            if (wasFlipLabel != shouldFlipLabel){
+                a = (shouldFlipLabel) ? a - 180 : a + 180;
+            }
+            if (a < 0 && a <-180){  a = 360 + a; }
+
+            //Angle Diffs
+            var theta1 = Math.atan2(old_d[1] - svg_cy, old_d[0] - svg_cx);
+            var theta2 = Math.atan2(d.y - svg_cy, d.x - svg_cx);
+            var delta = theta2 - theta1;
+            var deltaR = (a - old_rotate);
+
+            //Ignore Small changes
+            var rad_diff = delta / (Math.PI * 2);
+            if (Math.abs(rad_diff) < .003 || Math.abs(rad_diff) > .98){
+                t=1;        //Dont paramterize, just go to final value
+            }
+
+            var dx_t = r * Math.cos(theta1 + delta * t) + svg_cx;// + offset_d[0];
+            var dy_t = r * Math.sin(theta1 + delta * t) + svg_cy;// + offset_d[1];
+            var dr = (old_rotate + deltaR*t);
+
+            return "translate(" + dx_t + "," + dy_t + ")rotate(" + dr + ")translate(" + offset_d[0] + "," + offset_d[1] + ")";
+
+        }
     }
 
 
