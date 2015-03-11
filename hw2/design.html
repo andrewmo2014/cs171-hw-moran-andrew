@@ -76,7 +76,7 @@
     <!--Legend & Select Attributes Panel-->
     <div id="right_panel">
         <form>
-            <label><input onchange="" type="checkbox" name="continent_sorting_val" value="continent_sorting_val" checked> Combine Like Continents</label>
+            <label><input onchange="" type="checkbox" name="continent_sorting_val" value="continent_sorting_val"> Combine Like Continents</label>
         </form>
         <div>
             <form>
@@ -113,7 +113,6 @@
         countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
         asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
         continentSortingVal = d3.select("input[value=\"continent_sorting_val\"]").node().checked;
-        console.log( continentSortingVal );
         CompleteForce();
     }
 
@@ -236,7 +235,7 @@
     //Data Holders
     var graph = {nodes: [], links: []};
     var restructuredData;
-    var continentListing = ["Americas", "Africa", "Asia", "Europe", "Oceania"];
+    var continentListing;
 
     //Label Loc offset
     var padTextX = 22;
@@ -263,6 +262,8 @@
     var mutualScale = d3.scale.linear()
             .domain([0, 4.5, 9])
             .range(["green", "blue", "red"]);
+
+    var continentColorScale = d3.scale.category10();
 
 
     var timeSlider = document.getElementById("slider-time");
@@ -313,6 +314,9 @@
     d3.json( "data/countries_1995_2012.json", function(error, data) {
         //Calculate year range
         restructuredData = CalculateRestructuredData(data);     //New Data
+        continentListing = NumberCountriesPerContinent(data);
+
+        console.log(continentListing);
 
         UpdateFilters();
         ConstructPieLayout();
@@ -388,6 +392,20 @@
 //                .attr("transform", "translate(" + svg_cx + "," + svg_cy +")")
 //                .on("mouseover", mouseOverEvent)
 //                .on("mouseout", mouseOutEvent);
+
+//        var myPath = g_border.selectAll("path").data(pieData);
+//
+////        console.log(myPath);
+//
+//        myPath.enter()
+//                .append("path")
+//                .attr("fill", function(d) { return "red"; })
+//                .attr("class", "path")
+//                .attr("stroke", "gray")
+//                .attr("d", arc)
+//                .attr("transform", function(d){
+//                    return "translate(" + svg_cx + "," + svg_cy + ")";
+//                })
 
     }
 
@@ -593,7 +611,50 @@
             return d.data;
         });
 
+        ConstructContinentPieLayout();
+
     }
+
+    //Part 2: Circular
+    function ConstructContinentPieLayout() {
+
+        var r1 = .5*Math.min(svg_height, svg_width)/R_FACTOR;
+
+        var arc1 = d3.svg.arc()
+                .innerRadius(r1)
+                .outerRadius(r1+padTextX);
+
+        var pie1 = d3.layout.pie()
+                .sort( function(a,b){
+                    return d3.ascending(a["continent"], b["continent"]);
+                })
+                .value(function(d, i) {
+                    return d.value;
+                });
+
+        var p = pie1( (continentSortingVal) ? continentListing : [{value: 1}]);
+
+        var myPath = g_border.selectAll("path").data(p);
+
+        myPath.enter()
+                .append("path");
+        myPath
+                .attr("fill", function(d,i) {
+                    console.log( continentSortingVal);
+                    return (continentSortingVal) ? continentColorScale(i) : "silver";
+                })
+                .attr("class", "path")
+                .attr("stroke", "black")
+                .attr("d", function(d){
+                    return arc1(d);
+                })
+                .attr("transform", function(d){
+                    return "translate(" + svg_cx + "," + svg_cy + ")";
+                })
+
+        myPath.exit().remove();
+
+    };
 
     function UpdateViz(){
         graph_update();
@@ -716,6 +777,15 @@
         }
         else{
             return compareCountriesNew(a,b);
+        }
+    }
+
+    function compareContinents(a, b) {
+        if (continentSortingVal) {
+            return b.number - a.number;
+        }
+        else{
+            return null;
         }
     }
 
@@ -916,6 +986,22 @@
             return "translate(" + dx_t + "," + dy_t + ")rotate(" + dr + ")translate(" + offset_d[0] + "," + offset_d[1] + ")";
 
         }
+    }
+
+    function NumberCountriesPerContinent(data) {
+        var continentListing = d3.nest()           //Aggregated
+                .key(function (d) {
+                    return d.continent
+                })
+                .rollup(function (d) {
+                    return {"sumCountries" : d3.sum( d, function(g){ return 1; } ) };
+                }).entries(data);
+
+        continentListing.forEach(function(d){      //Rename variables
+            d.continent = d.key;
+            d.value = d.values.sumCountries;
+        });
+        return continentListing;
     }
 
 

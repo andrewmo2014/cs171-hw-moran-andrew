@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7f436fe7-d2d7-45f7-ae4b-0da354138779" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hw2/design.html" afterPath="$PROJECT_DIR$/hw2/design.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="2015-cs171-homework.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -40,8 +39,8 @@
       <file leaf-file-name="barchart.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-3.627451" vertical-offset="6055" max-vertical-offset="6600">
-              <caret line="416" column="0" selection-start-line="416" selection-start-column="0" selection-end-line="421" selection-end-column="9" />
+            <state vertical-scroll-proportion="-2.372549" vertical-offset="5354" max-vertical-offset="6600">
+              <caret line="365" column="8" selection-start-line="365" selection-start-column="8" selection-end-line="385" selection-end-column="9" />
               <folding>
                 <element signature="n#style#0;n#label#1;n#div#1;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#label#1;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -70,10 +69,10 @@
       <file leaf-file-name="design.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/hw2/design.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5009242" vertical-offset="10859" max-vertical-offset="13950">
-              <caret line="742" column="0" selection-start-line="742" selection-start-column="0" selection-end-line="742" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.7504621" vertical-offset="14699" max-vertical-offset="15240">
+              <caret line="1007" column="0" selection-start-line="1007" selection-start-column="0" selection-end-line="1007" selection-end-column="0" />
               <folding>
-                <marker date="1426066828000" expanded="true" signature="11908:12051" placeholder="..." />
+                <marker date="1426074110000" expanded="true" signature="12446:12589" placeholder="..." />
               </folding>
             </state>
           </provider>
@@ -892,8 +891,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-3.627451" vertical-offset="6055" max-vertical-offset="6600">
-          <caret line="416" column="0" selection-start-line="416" selection-start-column="0" selection-end-line="421" selection-end-column="9" />
+        <state vertical-scroll-proportion="-2.372549" vertical-offset="5354" max-vertical-offset="6600">
+          <caret line="365" column="8" selection-start-line="365" selection-start-column="8" selection-end-line="385" selection-end-column="9" />
           <folding>
             <element signature="n#style#0;n#label#1;n#div#1;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#label#1;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -905,10 +904,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/hw2/design.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5009242" vertical-offset="10859" max-vertical-offset="13950">
-          <caret line="742" column="0" selection-start-line="742" selection-start-column="0" selection-end-line="742" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.7504621" vertical-offset="14699" max-vertical-offset="15240">
+          <caret line="1007" column="0" selection-start-line="1007" selection-start-column="0" selection-end-line="1007" selection-end-column="0" />
           <folding>
-            <marker date="1426066828000" expanded="true" signature="11908:12051" placeholder="..." />
+            <marker date="1426074110000" expanded="true" signature="12446:12589" placeholder="..." />
           </folding>
         </state>
       </provider>
