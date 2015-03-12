@@ -176,29 +176,17 @@
         return restructuredData;
     }
 
-
     var intransition = false;
 
     var dropdowns = d3.selectAll("select");
     dropdowns.on("change", function() {
-//        UpdateFilters();
-//
-//        //Initialize First G
-//        InitializeCircular()
-//        CompleteCircular();
-
-//        if( nodes)
-//            oldNodeData = nodes.data();
-
         UpdateFilters();
         ConstructPieLayout();
-
+        ConstructAsterLayout();
         BuildComponents();
         UpdateViz();
 
     });
-
-
 
     var countrySortingE = document.getElementById("country_sorting_val");
     var countrySortingVal = countrySortingE.options[countrySortingE.selectedIndex].value;
@@ -208,6 +196,8 @@
     var asterSortingVal = asterSortingE.options[asterSortingE.selectedIndex].value;
 
     var continentSortingVal = d3.select("input[value=\"continent_sorting_val\"]").node().checked;
+    var continentSortingValPrev = continentSortingVal;
+
 
     var screen_width = 1293;
     var screen_height = 710;
@@ -229,6 +219,21 @@
     var g_chords = svg.append("g").attr("class", "chords");
     var g_nodes = svg.append("g").attr("class", "nodes");
     var g_labels = svg.append("g").attr("class", "labels");
+
+    var aster_offset = 25;
+    var aster_width = 300;
+    var aster_height = 300;
+    var asterYOffset = 0;
+    var aster_radius = Math.min(aster_width, aster_height) / 2;
+    var aster_innerRadius = 0.3 * aster_radius;
+    var total_exportSum;
+    var svg_aster = d3.select("#right_panel").append("svg")
+            .attr("width", aster_width)
+            .attr("height", aster_height)
+            .append("g")
+            .attr("transform", "translate(" + aster_width / 2 + "," + (aster_height/2 + asterYOffset) + ")");
+
+    var innerSlices, outerSlices, aster_arc, aster_data, aster_outlineArc;
 
 //    var g = svg.append("g");
 
@@ -260,24 +265,13 @@
     var selectedCountry = "United States";
 
     var mutualScale = d3.scale.linear()
-            .domain([0, 4.5, 9])
+            .domain([9, 4.5, 0])
             .range(["green", "blue", "red"]);
 
     var continentColorScale = d3.scale.category10();
 
-
     var timeSlider = document.getElementById("slider-time");
     var yearIndex = timeSlider.value - timeSlider.min;
-
-    ////////ASTER
-
-
-
-
-
-
-
-    ////////////////////
 
     //Apply Input Interaction
 //    var inputs = d3.selectAll("input");
@@ -289,7 +283,7 @@
 
         UpdateFilters();
         ConstructPieLayout();
-
+        ConstructAsterLayout();
         BuildComponents();
         UpdateViz();
     });
@@ -297,12 +291,11 @@
 
     d3.select("input[value=\"continent_sorting_val\"]").on("change", function() {
 
-
         yearIndex = timeSlider.value - timeSlider.min;
 
         UpdateFilters();
         ConstructPieLayout();
-
+        ConstructAsterLayout();
         BuildComponents();
         UpdateViz();
     });
@@ -316,11 +309,9 @@
         restructuredData = CalculateRestructuredData(data);     //New Data
         continentListing = NumberCountriesPerContinent(data);
 
-        console.log(continentListing);
-
         UpdateFilters();
         ConstructPieLayout();
-
+        ConstructAsterLayout();
         BuildComponents();
         UpdateViz();
     });
@@ -331,6 +322,7 @@
         AddLinks();
         AddNodes();
         AddLabels();
+        AddSlices();
 
         chords.exit().remove();
         nodes.exit().remove();
@@ -354,12 +346,8 @@
 
     function AddNodes(){
 
-
-        //console.log(pieData);
-
         nodes = g_nodes.selectAll("circle")
                 .data(pieData);
-
 
         nodes.enter()
                 .append("circle")
@@ -368,45 +356,11 @@
                     return d.name;
                 })
                 .attr("r", 6)
-//                .attr("cx", function (d){
-//                    return svg_cx;
-//                })
-//                .attr("cy", function (d){   return svg_cy;  })
                 .attr("transform", function(d) {
-                        //console.log(d.name);
-                        //console.log( angle(d, -90, 90) );
                         return "translate(" + svg_cx + "," + svg_cy + ")";
                 })
                 .on("mouseover", mouseOverEvent)
                 .on("mouseout", mouseOutEvent);
-
-//        nodes.enter().append("path")
-//                .attr("fill", function(d, i){
-//                    return "blue";
-//                })
-//                .attr("d", function (d) {
-//                    // log the result of the arc generator to show how cool it is :)
-//                    console.log(arc(d));
-//                    return arc(d);
-//                })
-//                .attr("transform", "translate(" + svg_cx + "," + svg_cy +")")
-//                .on("mouseover", mouseOverEvent)
-//                .on("mouseout", mouseOutEvent);
-
-//        var myPath = g_border.selectAll("path").data(pieData);
-//
-////        console.log(myPath);
-//
-//        myPath.enter()
-//                .append("path")
-//                .attr("fill", function(d) { return "red"; })
-//                .attr("class", "path")
-//                .attr("stroke", "gray")
-//                .attr("d", arc)
-//                .attr("transform", function(d){
-//                    return "translate(" + svg_cx + "," + svg_cy + ")";
-//                })
-
     }
 
     function AddLabels(){
@@ -421,13 +375,9 @@
                 })
                 .text(function (d) {  return d.name;  })
                 .attr("text-anchor", "left")
-//                .attr("x", function (d) { return svg_cx + padTextX; })
-//                .attr("y", function (d) { return svg_cy + padTextY; })
                 .attr("x", function (d) { return 0; })
                 .attr("y", function (d) { return 0; })
                 .attr("transform", function(d) {
-                    //console.log(d.name);
-                    //console.log( angle(d, -90, 90) );
                     return "translate(" + (svg_cx) + "," + (svg_cy) + ")rotate(" + 0 + ")";
                 })
                 .attr("font-family", "sans-serif")
@@ -435,155 +385,95 @@
                 .attr("fill", "black")
                 .on("mouseover", mouseOverEvent)
                 .on("mouseout", mouseOutEvent);
+
+    }
+
+    function AddSlices(){
+        innerSlices = svg_aster.selectAll(".solidArc")
+                .data(aster_data);
+
+        innerSlices
+                .enter()
+                .append("path")
+                .attr("fill", function(d) {
+                    var nullColor = "grey";
+                    var ranking = GetMutualRanking(d.data.source, d.data.partner);
+                    return (ranking >= 0) ? mutualScale(ranking) : nullColor;
+                })
+                .attr("class", "solidArc")
+                .attr("stroke", "black")
+                .attr("d", aster_arc);
+//            .on('mouseover', tip.show)
+//            .on('mouseout', tip.hide);
+
+        outerSlices = svg_aster.selectAll(".outlineArc")
+                .data(aster_data);
+
+        outerSlices
+                .enter()
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", "gray")
+                .attr("class", "outlineArc")
+                .attr("d", aster_outlineArc);
+
+        innerSlices.exit().remove();
+        outerSlices.exit().remove();
     }
 
 
-//    function UpdateAster(){
-//
-//
-//        var aster_width = 300;
-//        var aster_height = 300;
-//        var asterYOffset = 0;
-//        var aster_radius = Math.min(aster_width, aster_height) / 2;
-//        var aster_innerRadius = 0.3 * aster_radius;
-//        var total_exportSum;
-//
-//        var currentTopPartners = []
-//        graph.links.filter(function (d) {
-//            if (d.source.name == selectedCountry) {
-//                console.log( selectedCountry );
-//
-//                d.source.top_partners.forEach( function(e,i){
-//                    if (e.country_id == d.source.country_id){
-//                        currentTopPartners.push({"partner" : d.target,
-//                            "p_total_export" : e.total_export});
-//                    }
-//                })
-//            }
-//        });
-//
-//        total_exportSum = 0;
-//        currentTopPartners.forEach( function(d){
-//            total_exportSum = total_exportSum + d.p_total_export;
-//        });
-//
-//
-//        var aster_pie = d3.layout.pie()
-//                .sort(countrySorting)
-//                .value(function(d) { return 1; });
-//
-//        var aster_arc = d3.svg.arc()
-//                .innerRadius(aster_innerRadius)
-//                .outerRadius(function (d,i) {
-////                    currentTopPartners.forEach( function(e){
-////                        if (e.partner == d.data.target){
-//                    return (aster_radius - aster_innerRadius) * (d.data.p_total_export/total_exportSum) + aster_innerRadius;
-////                        }
-////                    });
-//                });
-//
-//        var aster_outlineArc = d3.svg.arc()
-//                .innerRadius(aster_innerRadius)
-//                .outerRadius(aster_radius);
-//
-//        var svg_aster = d3.select("#right_panel");
-//
-//
-//        var path = svg_aster.selectAll(".solidArc")
-//                .data(aster_pie(currentTopPartners))
-//                .attr("fill", function(d) { return "red"; })
-//                .attr("class", "solidArc")
-//                .attr("stroke", "gray")
-//                .attr("d", aster_arc);
-////            .on('mouseover', tip.show)
-////            .on('mouseout', tip.hide);
-//
-//        var outerPath = svg_aster.selectAll(".outlineArc")
-//                .data(aster_pie(currentTopPartners))
-//                .attr("fill", "none")
-//                .attr("stroke", "gray")
-//                .attr("class", "outlineArc")
-//                .attr("d", aster_outlineArc);
-//    }
-//
-//
-//    function InitializeAster() {
-//        var aster_width = 300;
-//        var aster_height = 300;
-//        var asterYOffset = 0;
-//        var aster_radius = Math.min(aster_width, aster_height) / 2;
-//        var aster_innerRadius = 0.3 * aster_radius;
-//        var total_exportSum;
-//
-//        var currentTopPartners = []
-//        graph.links.filter(function (d) {
-//            if (d.source.name == selectedCountry) {
-//                d.target.top_partners.forEach( function(e,i){
-//                    if (e.country_id == d.source.country_id){
-//                        currentTopPartners.push({"partner" : d.target,
-//                                                "p_total_export" : e.total_export});
-//                    }
-//                })
-//            }
-//        });
-//
-//        total_exportSum = 0;
-//        currentTopPartners.forEach( function(d){
-//            total_exportSum = total_exportSum + d.p_total_export;
-//        });
-//
-//
-//        var aster_pie = d3.layout.pie()
-//                .sort(null)
-//                .value(function(d) { return 1; });
-//
-//        var aster_arc = d3.svg.arc()
-//                .innerRadius(aster_innerRadius)
-//                .outerRadius(function (d,i) {
-//                    console.log(d);
-////                    currentTopPartners.forEach( function(e){
-////                        if (e.partner == d.data.target){
-//                            return (aster_radius - aster_innerRadius) * (d.data.p_total_export/total_exportSum) + aster_innerRadius;
-////                        }
-////                    });
-//                });
-//
-//        var aster_outlineArc = d3.svg.arc()
-//                .innerRadius(aster_innerRadius)
-//                .outerRadius(aster_radius);
-//
-//        var svg_aster = d3.select("#right_panel").append("svg")
-//                .attr("width", aster_width)
-//                .attr("height", aster_height)
-//                .append("g")
-//                .attr("transform", "translate(" + aster_width / 2 + "," + (aster_height/2 + asterYOffset) + ")");
-//
-//
-//        var path = svg_aster.selectAll(".solidArc")
-//                .data(aster_pie(currentTopPartners))
-//                .enter().append("path")
-//                .attr("fill", function(d) { return "red"; })
-//                .attr("class", "solidArc")
-//                .attr("stroke", "gray")
-//                .attr("d", aster_arc);
-////            .on('mouseover', tip.show)
-////            .on('mouseout', tip.hide);
-//
-//        var outerPath = svg_aster.selectAll(".outlineArc")
-//                .data(aster_pie(currentTopPartners))
-//                .enter().append("path")
-//                .attr("fill", "none")
-//                .attr("stroke", "gray")
-//                .attr("class", "outlineArc")
-//                .attr("d", aster_outlineArc);
-//
-//    }
+    function ConstructAsterLayout() {
+
+        var currentTopPartners = []
+        graph.links.filter(function (d) {
+            if (d.source.name == selectedCountry) {
+                d.source.top_partners.forEach( function(e,i) {
+                    if (e.country_id == d.target.country_id) {
+                        currentTopPartners.push({
+                            "source": d.source,
+                            "partner": d.target,
+                            "p_total_export": GetTotalExport(e),
+                            "p_proximity" : GetProximity(d.source, d.target),
+                            "p_mutuality" : GetMutualRanking(d.source, d.target)
+                        });
+                    }
+                })
+            }
+        });
+
+        total_exportSum = 0;
+        currentTopPartners.forEach( function(d){
+            total_exportSum = total_exportSum + d.p_total_export;
+        });
+
+        currentTopPartners.forEach( function(d){
+            d.total_exportSum = total_exportSum;
+        });
+
+        var aster_pie = d3.layout.pie()
+                .sort( compareAsterNew )
+                .value(function(d) { return 1; });
+
+        aster_arc = d3.svg.arc()
+                .innerRadius(aster_innerRadius)
+                .outerRadius(function (d,i) {
+                    var minR = (aster_innerRadius+aster_offset);
+                    var percentExport = (d.data.p_total_export/ d.data.total_exportSum);
+                    return (aster_radius - minR) * percentExport + minR;
+                });
+
+        aster_outlineArc = d3.svg.arc()
+                .innerRadius(aster_innerRadius)
+                .outerRadius(aster_radius);
+
+
+        aster_data = aster_pie( currentTopPartners );
+
+    }
 
 
     //Part 2: Circular
     function ConstructPieLayout() {
-
-        console.log("eher");
 
         r = .5*Math.min(svg_height, svg_width)/R_FACTOR;
 
@@ -612,7 +502,6 @@
         });
 
         ConstructContinentPieLayout();
-
     }
 
     //Part 2: Circular
@@ -684,11 +573,11 @@
                 });
     }
 
-    function UpdateNodes(){
+    function UpdateNodes(transTime){
 
         nodes.transition()
                 .delay(0)
-                .duration(1000)
+                .duration(transTime)
                 .each("start", function(d) {
                     intransition = true;
                 })
@@ -705,19 +594,19 @@
         });
     }
 
-    function UpdateLabels(){
+    function UpdateLabels(transTime) {
 
         labels.transition()
                 .delay(0)
-                .duration(1000)
-                .each("start", function(d){
+                .duration(transTime)
+                .each("start", function (d) {
 
                     var oldRotate = d3.transform(d3.select(this).attr("transform")).rotate;
                     var oldCoords = d3.transform(d3.select(this).attr("transform")).translate;
 
                     var leftHem = oldCoords[0] <= svg_cx + padTextY ? true : false;
                     var tx = (leftHem) ? oldRotate + 180 : oldRotate;
-                    var ty = (leftHem) ? 2*padTextY : 0;
+                    var ty = (leftHem) ? 2 * padTextY : 0;
 
                     d3.select(this).attr("transform", function (d) {
                         return "translate(" + oldCoords[0] + "," + oldCoords[1] + ")rotate(" + tx + ")translate(" + 0 + "," + ty + ")";
@@ -727,18 +616,18 @@
 
                     });
                 })
-                .attrTween("transform", function(d, i, a) {
+                .attrTween("transform", function (d, i, a) {
                     var oldCoords = d3.transform(d3.select(this).attr("transform")).translate;
                     var oldRotate = d3.transform(d3.select(this).attr("transform")).rotate;
-                    return ParameterizeLabel(oldCoords, d, [padTextX,padTextY], oldRotate);
+                    return ParameterizeLabel(oldCoords, d, [padTextX, padTextY], oldRotate);
 
                 })
-                .each("end", function(d){
-                    var shift = angle(d,0,0) < 0 ? 1.0 : -1.0;
+                .each("end", function (d) {
+                    var shift = angle(d, 0, 0) < 0 ? 1.0 : -1.0;
                     d3.select(this).attr("transform", function (d) {
                         return "translate(" + d.x + "," + d.y +
                                 ")rotate(" + angle(d, -90, 90) +
-                                ")translate(" + shift*padTextX + "," + padTextY + ")";
+                                ")translate(" + shift * padTextX + "," + padTextY + ")";
                     });
                     d3.select(this).attr("text-anchor", function (d) {
                         return angle(d, 0, 0) < 0 ? "start" : "end";
@@ -747,15 +636,46 @@
                 });
     }
 
+
+    function UpdateSlices(){
+        innerSlices
+                .attr("fill", function(d) {
+                    var nullColor = "grey";
+//                    if (d.data.source.name == selectedCountry) {
+                    var ranking = d.data.p_mutuality;
+                    return (ranking >= 0) ? mutualScale(ranking) : nullColor;
+//                    return "red";
+                })
+                .attr("class", "solidArc")
+                .attr("stroke", "black")
+                .attr("d", aster_arc);
+//            .on('mouseover', tip.show)
+//            .on('mouseout', tip.hide);
+
+        outerSlices
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("class", "outlineArc")
+                .attr("d", aster_outlineArc);
+    }
+
+
     function graph_update(){
 
-        UpdateChords(1000);
-        UpdateNodes();
-        UpdateLabels();
-
+        var transTime = 0;
         if (countrySortingValPrev != countrySortingVal){
+            transTime = 1000;
             countrySortingValPrev = countrySortingVal;
         }
+        if (continentSortingValPrev != continentSortingVal){
+            transTime = 1000;
+            continentSortingValPrev = continentSortingVal;
+        }
+
+        UpdateChords(transTime);
+        UpdateNodes(transTime);
+        UpdateLabels(transTime);
+        UpdateSlices();
 
     }
 
@@ -789,6 +709,20 @@
         }
     }
 
+    function compareAsterNew(a, b){
+        if (asterSortingVal == "export_ranking") {  return b.p_total_export - a.p_total_export; }
+        if (asterSortingVal == "proximity") {       return a.p_proximity - b.p_proximity; }
+        if (asterSortingVal == "mutuality") {       return b.p_mutuality - a.p_mutuality; }
+    }
+
+
+    function mouseOverUpdateComponents(){
+        UpdateChords(0);
+        ConstructAsterLayout();
+        AddSlices();
+        UpdateSlices();
+    }
+
     //////////////////////////////////////
     // Mouse Events
     //////////////////////////////////////
@@ -811,7 +745,7 @@
                         }
                     });
 
-            UpdateChords(0);
+            mouseOverUpdateComponents();
 
             nodes
                     .classed("node--target", function (n) { return n.target;    })
@@ -819,8 +753,6 @@
                     .classed("hidden", function (n) {   return !(n.target || n.source); });
             labels
                     .classed("hidden", function (n) {   return !(n.target || n.source); });
-
-            //UpdateAster();
 
         }
     }
@@ -834,36 +766,25 @@
     //////////////////////////////////////
     // Country Rankings
     //////////////////////////////////////
-
     function GetMutualRanking(sourceExporter, targetExporter){
         var val = -1
+        var MAX_PARTNERS = 10;
         targetExporter.top_partners.forEach(function (partner, i) {
-            if (partner.country_id == sourceExporter.country_id) {  val = i; }} )
+            if (partner.country_id == sourceExporter.country_id) {
+                val = (MAX_PARTNERS-1)-i;   //indexed
+            }
+        })
         return val;
     }
-
-    function GetProximityRanking(sourceExporter, targetExporter){
-
-        var proximities = [];
-        sourceExporter.top_partners.forEach( function(e,i) {
-            var dx = targetExporter.latitude - sourceExplorer.latitude;
-            var dy = targetExporter.longitude - sourceExplorer.longitude;
-            var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-            proximities.push( { })
-        });
-
-        var val = -1
-        targetExporter.top_partners.forEach(function (partner, i) {
-            if (partner.country_id == sourceExporter.country_id) {  val = i; }} )
-        return val;
+    function GetProximity(sourceExporter, targetExporter){
+        var dx = targetExporter.latitude - sourceExporter.latitude;
+        var dy = targetExporter.longitude - sourceExporter.longitude;
+        var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+        return dist
     }
 
-    function GetExportRanking(sourceExporter, targetExporter){
-
-        var val = -1
-        sourceExporter.top_partners.forEach(function (partner, i) {
-            if (partner.country_id == targetExporter.country_id) {  val = i; }} )
-        return val;
+    function GetTotalExport(partnerExporter){
+        return partnerExporter.total_export;
     }
 
     //////////////////////////////////////
@@ -897,35 +818,35 @@
         return p;
     }
 
-    function ParameterizeChord(old_source, old_target, source, target) {
-        return function (t) {
-
-            var s1 = ParameterizePoint(
-                    [old_source[0], old_source[1]],
-                    [Polar2Cartesian(source.startAngle, r).x, Polar2Cartesian(source.startAngle, r).y],
-                    t
-            );
-
-            var s2 = ParameterizePoint(
-                    [old_target[0], old_target[1]],
-                    [Polar2Cartesian(target.startAngle, r).x, Polar2Cartesian(target.startAngle, r).y],
-                    t
-            );
-            var s3 = ParameterizePoint(
-                    [old_target[0], old_target[1]],
-                    [Polar2Cartesian(target.endAngle, r).x, Polar2Cartesian(target.endAngle, r).y],
-                    t
-            );
-            var s4 = ParameterizePoint(
-                    [old_source[0], old_source[1]],
-                    [Polar2Cartesian(source.endAngle, r).x, Polar2Cartesian(source.endAngle, r).y],
-                    t
-            );
-
-            return DrawPath(source, target);
-
-        }
-    }
+//    function ParameterizeChord(old_source, old_target, source, target) {
+//        return function (t) {
+//
+//            var s1 = ParameterizePoint(
+//                    [old_source[0], old_source[1]],
+//                    [Polar2Cartesian(source.startAngle, r).x, Polar2Cartesian(source.startAngle, r).y],
+//                    t
+//            );
+//
+//            var s2 = ParameterizePoint(
+//                    [old_target[0], old_target[1]],
+//                    [Polar2Cartesian(target.startAngle, r).x, Polar2Cartesian(target.startAngle, r).y],
+//                    t
+//            );
+//            var s3 = ParameterizePoint(
+//                    [old_target[0], old_target[1]],
+//                    [Polar2Cartesian(target.endAngle, r).x, Polar2Cartesian(target.endAngle, r).y],
+//                    t
+//            );
+//            var s4 = ParameterizePoint(
+//                    [old_source[0], old_source[1]],
+//                    [Polar2Cartesian(source.endAngle, r).x, Polar2Cartesian(source.endAngle, r).y],
+//                    t
+//            );
+//
+//            return DrawPath(source, target);
+//
+//        }
+//    }
 
     function ParameterizeNode(old_d, new_d) {
         return function (t) {
@@ -941,17 +862,17 @@
         }
     }
 
-    function ParameterizePoint(old_d, new_d, t) {
-
-            var theta1 = Math.atan2(old_d[1] - svg_cy, old_d[0] - svg_cx);
-            var theta2 = Math.atan2(new_d[1] - svg_cy, new_d[0] - svg_cx);
-            var delta = theta2 - theta1;
-
-            var dx = r * Math.cos(theta1 + delta * t) + svg_cx;
-            var dy = r * Math.sin(theta1 + delta * t) + svg_cy;
-
-            return [ dx , dy ];
-    }
+//    function ParameterizePoint(old_d, new_d, t) {
+//
+//            var theta1 = Math.atan2(old_d[1] - svg_cy, old_d[0] - svg_cx);
+//            var theta2 = Math.atan2(new_d[1] - svg_cy, new_d[0] - svg_cx);
+//            var delta = theta2 - theta1;
+//
+//            var dx = r * Math.cos(theta1 + delta * t) + svg_cx;
+//            var dy = r * Math.sin(theta1 + delta * t) + svg_cy;
+//
+//            return [ dx , dy ];
+//    }
 
     function ParameterizeLabel(old_d, d, offset_d, old_rotate) {
         return function (t) {
@@ -975,7 +896,7 @@
 
             //Ignore Small changes
             var rad_diff = delta / (Math.PI * 2);
-            if (Math.abs(rad_diff) < .003 || Math.abs(rad_diff) > .98){
+            if ((Math.abs(rad_diff) < .003 || Math.abs(rad_diff) > .98)){
                 t=1;        //Dont paramterize, just go to final value
             }
 
