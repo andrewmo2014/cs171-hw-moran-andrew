@@ -45,6 +45,36 @@
         stroke-opacity: .4;
     }
 
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 60px;
+        height: 28px;
+        padding: 2px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+
+    .solidArc:hover {
+        fill: goldenrod ;
+    }
+
+    .current_country {
+        display: block;
+        color: black;
+        font-weight: bold;
+        width: 300px;
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        text-ver: middle;
+        font-family : "Helvetica Neue";
+        font-size : 20px;
+    }
+
 
     #container_main {height: 710px; width:1293px; font-size:0;}
     #left_panel, #right_panel {display: inline-block; *display: inline; zoom: 1; vertical-align: top; font-size: 16px;}
@@ -75,19 +105,12 @@
     </div>
     <!--Legend & Select Attributes Panel-->
     <div id="right_panel">
-        <form>
-            <label><input onchange="" type="checkbox" name="continent_sorting_val" value="continent_sorting_val"> Combine Like Continents</label>
-        </form>
         <div>
-            <form>
-                Top Partner Sorting:
-                <select id="aster_sorting_val" onchange="" name="aster_sorting_val">
-                    <option value="export_ranking" selected="selected">Export Amount</option>
-                    <option value="mutuality">Mutuality</option>
-                    <option value="proximity">Proximity</option>
-
-                </select>
+            <form id="continents_sorting_container">
+                <label><input onchange="" type="checkbox" name="continent_sorting_val" value="continent_sorting_val"> Combine Like Continents</label>
             </form>
+        </div>
+        <div>
             <form>
                 Country Sorting:
                 <select id="country_sorting_val" onchange="" name="country_sorting_val">
@@ -97,6 +120,31 @@
                 </select>
             </form>
         </div>
+        <div>
+            <label class="current_country" id="current_country">United States</label>
+        </div>
+        <div>
+            <form id="partners_sorting_container">
+                Export Partner Sorting:
+                <select id="aster_sorting_val" onchange="" name="aster_sorting_val">
+                    <option value="export_ranking" selected="selected">Amount</option>
+                    <option value="mutuality">Mutuality</option>
+                    <option value="proximity">Proximity</option>
+                    <option value="name">Name</option>
+
+                </select>
+            </form>
+        </div>
+        <div id ="scale_ref" >
+            Mutuality Raking:
+        </div>
+        <div id ="export_aster_plot">
+            Top Partners:
+        </div>
+        <div id ="partner_facts">
+            Hello
+
+        </div>
     </div>
 </div>
 
@@ -105,6 +153,10 @@
     /////////////////////////////////
     //// Apply Filters
     /////////////////////////////////
+
+    var div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
 
     var oldNodeData, nodesOld, oldPie, oldPieData;
 
@@ -227,13 +279,14 @@
     var aster_radius = Math.min(aster_width, aster_height) / 2;
     var aster_innerRadius = 0.3 * aster_radius;
     var total_exportSum;
-    var svg_aster = d3.select("#right_panel").append("svg")
+    var svg_aster = d3.select("#export_aster_plot").append("svg")
             .attr("width", aster_width)
             .attr("height", aster_height)
             .append("g")
             .attr("transform", "translate(" + aster_width / 2 + "," + (aster_height/2 + asterYOffset) + ")");
 
     var innerSlices, outerSlices, aster_arc, aster_data, aster_outlineArc;
+
 
 //    var g = svg.append("g");
 
@@ -263,6 +316,7 @@
 
     var startUp = true;
     var selectedCountry = "United States";
+    document.getElementById('current_country').innerHTML = selectedCountry;
 
     var mutualScale = d3.scale.linear()
             .domain([9, 4.5, 0])
@@ -301,6 +355,142 @@
     });
 
 
+    //Add Legend
+    // add legend
+
+    function AddLegend() {
+
+        var initX = 50;
+        var offsetX = 25;
+        var offsetText = 22;
+        var offsetBox = 10;
+        var spacing = 25;
+
+        var legend = d3.select("#continents_sorting_container").append("svg").append("g")
+            .attr("class", "legend")
+            .attr("height", 100)
+            .attr("width", 100);
+
+        legend.selectAll('g').data(continentListing)
+                .enter()
+                .append('g')
+                .each(function (d, i) {
+                    var g = d3.select(this);
+                    g.append("rect")
+                            .attr("x", initX)
+                            .attr("y", i * spacing + offsetBox)
+                            .attr("width", 10)
+                            .attr("height", 10)
+                            .style("fill", continentColorScale(i));
+
+                    g.append("text")
+                            .attr("x", initX + offsetX)
+                            .attr("y", i * spacing + offsetText)
+                            .attr("height", 30)
+                            .attr("width", 100)
+                            .style("fill", continentColorScale(i))
+                            .text(d.continent);
+
+                });
+    }
+
+    function AddPartnerScale() {
+
+        var data = d3.range(2);
+
+        var scale_svg = d3.select("#scale_ref").append("svg").attr("height", 50);
+
+        var minX = 25;
+        var maxX = 175;
+
+        var gradient = scale_svg
+                .append("linearGradient")
+                .attr("x1", minX)
+                .attr("x2", maxX)
+                .attr("y1", "0")
+                .attr("y2", "0")
+                .attr("id", "gradient")
+                .attr("gradientUnits", "userSpaceOnUse")
+
+        gradient
+                .append("stop")
+                .attr("offset", "0")
+                .attr("stop-color", "#0f0")
+
+        gradient
+                .append("stop")
+                .attr("offset", "0.5")
+                .attr("stop-color", "#00f")
+
+        gradient
+                .append("stop")
+                .attr("offset", "1")
+                .attr("stop-color", "#f00")
+
+
+
+        scale_svg
+                .selectAll("rect")
+                .data([0])
+                .enter()
+                .append("rect")
+                .attr("x", function(d,i){
+                    return 25;
+                })
+                .attr("y", 25)
+                .attr("width", 150)
+                .attr("height", function(d){return 20})
+                .attr("fill", "url(#gradient)");
+
+        scale_svg
+                .selectAll("text")
+                .data(["Positive","Neutral", "Negative"])
+                .enter()
+                .append("text")
+                .attr("x", function(d,i){
+                    return i*75 + 25;
+                })
+                .attr("y", 20)
+                .attr("width", 30)
+                .attr("height", function(d){return 80})
+                .text( function(d){
+                    return d;
+                })
+                .attr("text-anchor", function(d,i){
+                    return "middle";
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black")
+
+        scale_svg
+                .append("rect")
+                .attr("x", function(d){return 250;})
+                .attr("y", 25)
+                .attr("width", 25)
+                .attr("height", function(d){return 20})
+                .attr("fill", "grey");
+
+        scale_svg
+                .append("text")
+                .attr("x", 250)
+                .attr("y", 20)
+                .attr("width", 30)
+                .attr("height", 80)
+                .text( "None")
+                .attr("text-anchor", function(d,i){
+                    return "right";
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "10px")
+                .attr("fill", "black");
+
+
+
+
+    }
+
+
     //////////////////////////////////////
     // Read In Data
     //////////////////////////////////////
@@ -308,6 +498,8 @@
         //Calculate year range
         restructuredData = CalculateRestructuredData(data);     //New Data
         continentListing = NumberCountriesPerContinent(data);
+        AddLegend();
+        AddPartnerScale();
 
         UpdateFilters();
         ConstructPieLayout();
@@ -319,7 +511,7 @@
 
     function BuildComponents(){
 
-        AddLinks();
+        AddChords();
         AddNodes();
         AddLabels();
         AddSlices();
@@ -329,7 +521,7 @@
         labels.exit().remove();
     }
 
-    function AddLinks(){
+    function AddChords(){
 
         chords = g_chords.selectAll("path")
                 .data( graph.links );
@@ -341,7 +533,8 @@
                     return d.source.name + "---" + d.target.name;
                 })
                 .attr("stroke", "black")
-                .attr("fill", "grey");
+                .attr("fill", "grey")
+                .attr("opacity", 1);
     }
 
     function AddNodes(){
@@ -402,9 +595,24 @@
                 })
                 .attr("class", "solidArc")
                 .attr("stroke", "black")
-                .attr("d", aster_arc);
-//            .on('mouseover', tip.show)
-//            .on('mouseout', tip.hide);
+                .attr("d", aster_arc)
+                .on("mouseover", function(d) {
+                    console.log(d);
+                    div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                    div .html(d.data.partner.name + "<br/>"  + d.data.p_proximity)
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    ShowPartnerChords(d.data.partner);
+                })
+                .on("mouseout", function(d) {
+                    div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    UpdateChords(0);
+
+                });
 
         outerSlices = svg_aster.selectAll(".outlineArc")
                 .data(aster_data);
@@ -419,6 +627,38 @@
 
         innerSlices.exit().remove();
         outerSlices.exit().remove();
+    }
+
+    function ShowPartnerChords(partner, notHidden){
+        chords.transition()
+                .delay(0)
+                .duration(0)
+                .attr("d", function (d) {
+                    if (d.source.name == partner.name) {
+                        return DrawPath(d.source, d.target);
+                    }
+                    if (d.source.name == selectedCountry) {
+                        return DrawPath(d.source, d.target);
+                    }
+                })
+                .attr("stroke", "black")
+                .attr("fill", function (d) {
+                    var nullColor = "grey";
+                    if (d.source.name == partner.name) {
+                        var ranking = GetMutualRanking(d.source, d.target);
+                        return (ranking >= 0) ? mutualScale(ranking) : nullColor;
+                    }
+                    if (d.source.name == selectedCountry) {
+                        var ranking = GetMutualRanking(d.source, d.target);
+                        return (ranking >= 0) ? mutualScale(ranking) : nullColor;
+                    }
+                    return nullColor;
+                })
+                .attr("opacity", function(d){
+                    var directedLink =  (d.source.name == selectedCountry && d.target.name == partner.name );
+                    return (directedLink) ? 1 : 0.25;
+                });
+
     }
 
 
@@ -570,7 +810,8 @@
                     else{
                         return nullColor
                     }
-                });
+                })
+                .attr("opacity", 1);
     }
 
     function UpdateNodes(transTime){
@@ -713,6 +954,7 @@
         if (asterSortingVal == "export_ranking") {  return b.p_total_export - a.p_total_export; }
         if (asterSortingVal == "proximity") {       return a.p_proximity - b.p_proximity; }
         if (asterSortingVal == "mutuality") {       return b.p_mutuality - a.p_mutuality; }
+        if (asterSortingVal == "name") {       return d3.ascending(a.partner.name, b.partner.name);  }
     }
 
 
@@ -730,6 +972,7 @@
 
         if (!intransition) {
             selectedCountry = d.name;
+            document.getElementById('current_country').innerHTML = selectedCountry;
 
             nodes.each(function (n) {
                 n.target = false;
