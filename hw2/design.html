@@ -58,8 +58,21 @@
         pointer-events: none;
     }
 
-    .solidArc:hover {
-        fill: goldenrod ;
+    .selectSlice {
+        fill: black ;
+    }
+
+    .partnerName {
+        display: block;
+        color: black;
+        font-weight: bold;
+        /*width: 20px;*/
+        /*height: 50px;*/
+        /*line-height: 10px;*/
+        /*text-align: center;*/
+        /*text-ver: middle;*/
+        font-family : "Helvetica Neue";
+        font-size : 12px;
     }
 
     .current_country {
@@ -127,23 +140,19 @@
             <form id="partners_sorting_container">
                 Export Partner Sorting:
                 <select id="aster_sorting_val" onchange="" name="aster_sorting_val">
-                    <option value="export_ranking" selected="selected">Amount</option>
-                    <option value="mutuality">Mutuality</option>
-                    <option value="proximity">Proximity</option>
+                    <option value="p_total_export" selected="selected">Amount</option>
+                    <option value="p_mutuality">Mutuality</option>
+                    <option value="p_proximity">Proximity</option>
                     <option value="name">Name</option>
 
                 </select>
             </form>
         </div>
+        Mutuality Raking:
         <div id ="scale_ref" >
-            Mutuality Raking:
         </div>
+        Top Partners:
         <div id ="export_aster_plot">
-            Top Partners:
-        </div>
-        <div id ="partner_facts">
-            Hello
-
         </div>
     </div>
 </div>
@@ -277,7 +286,7 @@
     var aster_height = 300;
     var asterYOffset = 0;
     var aster_radius = Math.min(aster_width, aster_height) / 2;
-    var aster_innerRadius = 0.3 * aster_radius;
+    var aster_innerRadius = 0.5 * aster_radius;
     var total_exportSum;
     var svg_aster = d3.select("#export_aster_plot").append("svg")
             .attr("width", aster_width)
@@ -285,10 +294,13 @@
             .append("g")
             .attr("transform", "translate(" + aster_width / 2 + "," + (aster_height/2 + asterYOffset) + ")");
 
-    var innerSlices, outerSlices, aster_arc, aster_data, aster_outlineArc;
-
-
-//    var g = svg.append("g");
+    var innerSlices, outerSlices, aster_arc, aster_data, aster_outlineArc
+    var aster_partner_info_percent;
+    var aster_partner_info_name;
+    var aster_partner_info_mutual;
+    var aster_partner_info_export;
+    var aster_partner_info_prox;
+    var currentSliceIndex = 0;
 
     //Data Holders
     var graph = {nodes: [], links: []};
@@ -516,6 +528,7 @@
         AddLabels();
         AddSlices();
 
+
         chords.exit().remove();
         nodes.exit().remove();
         labels.exit().remove();
@@ -581,38 +594,139 @@
 
     }
 
-    function AddSlices(){
-        innerSlices = svg_aster.selectAll(".solidArc")
-                .data(aster_data);
 
-        innerSlices
+    function AddAsterInfo(partner){
+
+        aster_partner_info_percent = svg_aster.selectAll(".partnerPercent")
+                .data([partner]);
+
+        aster_partner_info_percent
                 .enter()
-                .append("path")
-                .attr("fill", function(d) {
-                    var nullColor = "grey";
-                    var ranking = GetMutualRanking(d.data.source, d.data.partner);
-                    return (ranking >= 0) ? mutualScale(ranking) : nullColor;
-                })
-                .attr("class", "solidArc")
-                .attr("stroke", "black")
-                .attr("d", aster_arc)
-                .on("mouseover", function(d) {
-                    console.log(d);
-                    div.transition()
-                            .duration(200)
-                            .style("opacity", .9);
-                    div .html(d.data.partner.name + "<br/>"  + d.data.p_proximity)
-                            .style("left", (d3.event.pageX) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
-                    ShowPartnerChords(d.data.partner);
-                })
-                .on("mouseout", function(d) {
-                    div.transition()
-                            .duration(500)
-                            .style("opacity", 0);
-                    UpdateChords(0);
+                .append("text")
+                .attr("class", "partnerPercent")
+//                .attr("dy", ".35em")
+                .attr("x", 0)
+                .attr("y", -35)
+                .attr("text-anchor", "middle") // text-align: right
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "28px")
+                .attr("fill", "black")
 
+        aster_partner_info_name = svg_aster.selectAll(".partnerName")
+                .data([partner]);
+
+        aster_partner_info_name
+                .enter()
+                .append("text")
+                .attr("class", "partnerName")
+//                .attr("dy", ".35em")
+                .attr("x", 0)
+                .attr("y", 10)
+                .attr("text-anchor", "middle") // text-align: right
+                .text(function(d){
+                    return d.partner.name;
                 });
+
+        aster_partner_info_mutual = svg_aster.selectAll(".partnerAttr1")
+                .data([partner]);
+
+        aster_partner_info_mutual
+                .enter()
+                .append("text")
+                .attr("class", "partnerAttr1")
+//                .attr("dy", ".35em")
+                .attr("x", 0)
+                .attr("y", 60)
+                .attr("text-anchor", "middle") // text-align: right
+                .text(function(d){
+                    (d.p_mutuality) < 0 ? "None" : 10-d.p_mutuality;
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "20px")
+                .attr("fill", "black")
+
+        aster_partner_info_export = svg_aster.selectAll(".partnerAttr2")
+                .data([partner]);
+
+        aster_partner_info_export
+                .enter()
+                .append("text")
+                .attr("class", "partnerAttr2")
+//                .attr("dy", ".35em")
+                .attr("x", 0)
+                .attr("y", -15)
+                .attr("text-anchor", "middle") // text-align: right
+                .attr("fill", "#616161")
+
+        aster_partner_info_prox = svg_aster.selectAll(".partnerAttr3")
+                .data([partner]);
+
+        aster_partner_info_prox
+                .enter()
+                .append("text")
+                .attr("class", "partnerAttr3")
+//                .attr("dy", ".35em")
+                .attr("x", 0)
+                .attr("y", 35)
+                .attr("text-anchor", "middle") // text-align: right
+                .text(function(d){
+                    return d.p_proximity;
+                })
+                .attr("fill", "#616161")
+
+
+        aster_partner_info_percent.exit().remove();
+        aster_partner_info_name.exit().remove();
+        aster_partner_info_mutual.exit().remove();
+        aster_partner_info_export.exit().remove();
+        aster_partner_info_prox.exit().remove();
+    }
+
+    function UpdateAsterInfo(){
+        aster_partner_info_percent.text(function(d){
+            return d3.round(d.percentExport*100,1) + "%";
+        });
+        aster_partner_info_name.text(function(d){       return d.partner.name;  });
+        aster_partner_info_mutual
+                .text(function(d){
+                    return (d.p_mutuality) < 0 ? "None" : 10-d.p_mutuality;
+                })
+                .attr("fill", function(d){
+                    return (d.p_mutuality >= 0) ? mutualScale(d.p_mutuality) : "black";
+                });
+        aster_partner_info_export.text(function(d){     return "Amount: " + d3.round(d.p_total_export / 1e6, 1) + "M";   });
+        aster_partner_info_prox.text(function(d){       return "Proximity: " + d3.format(".1f")(d3.round(d.p_proximity,1)) + "º";   });
+
+    }
+
+
+    function HighlightSlice(d){
+
+//        var currentSlice;
+//
+//        aster_data.sort(compareAsterNew2).filter( function(e,j){
+//            if (e.data.partner.name == d.data.partner.name){
+//                currentSliceIndex = j;
+//                return j;
+//            }
+//        })
+
+
+
+        outerSlices
+            .filter( function(e,j){
+                return e.data.partner.name == d.data.partner.name;
+            })
+            .classed("selectSlice", true);
+
+        outerSlices
+            .filter( function(e,j){
+                return e.data.partner.name != d.data.partner.name;
+            })
+            .classed("selectSlice", false);
+    }
+
+    function AddSlices(){
 
         outerSlices = svg_aster.selectAll(".outlineArc")
                 .data(aster_data);
@@ -620,16 +734,74 @@
         outerSlices
                 .enter()
                 .append("path")
-                .attr("fill", "none")
+                .attr("fill", "silver")
                 .attr("stroke", "gray")
                 .attr("class", "outlineArc")
-                .attr("d", aster_outlineArc);
+                .attr("d", aster_outlineArc)
+                .on("mouseover", function(d,i) {
 
-        innerSlices.exit().remove();
+                    aster_data.sort(compareAsterNew2).filter( function(e,j){
+                        if (e.data.partner.name == d.data.partner.name){
+                            currentSliceIndex = j;
+                            return j;
+                        }
+                    })
+
+                    ShowPartnerChords(d.data.partner);
+                    aster_update(d);
+                })
+                .on("mouseout", function(d,i) {
+                    div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    UpdateChords(0);
+                    HighlightSlice(d);
+
+                });
+
+        innerSlices = svg_aster.selectAll(".solidArc")
+                .data(aster_data);
+
+        innerSlices
+                .enter()
+                .append("path")
+                .attr("fill", function(d,i) {
+//                    console.log(i);
+                    var nullColor = "grey";
+                    var ranking = GetMutualRanking(d.data.source, d.data.partner);
+                    return (ranking >= 0) ? mutualScale(ranking) : nullColor;
+                })
+                .attr("class", "solidArc")
+                .attr("stroke", "black")
+                .attr("d", aster_arc)
+                .on("mouseover", function(d,i) {
+
+                    aster_data.sort(compareAsterNew2).filter( function(e,j){
+                        if (e.data.partner.name == d.data.partner.name){
+                            currentSliceIndex = j;
+                            return j;
+                        }
+                    })
+
+                    ShowPartnerChords(d.data.partner);
+                    aster_update(d);
+                })
+                .on("mouseout", function(d,i) {
+                    div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    UpdateChords(0);
+                    HighlightSlice(d);
+
+                });
+
+
         outerSlices.exit().remove();
+        innerSlices.exit().remove();
+
     }
 
-    function ShowPartnerChords(partner, notHidden){
+    function ShowPartnerChords(partner){
         chords.transition()
                 .delay(0)
                 .duration(0)
@@ -642,7 +814,7 @@
                     }
                 })
                 .attr("stroke", "black")
-                .attr("fill", function (d) {
+                .attr("fill", function (d,i) {
                     var nullColor = "grey";
                     if (d.source.name == partner.name) {
                         var ranking = GetMutualRanking(d.source, d.target);
@@ -674,7 +846,7 @@
                             "partner": d.target,
                             "p_total_export": GetTotalExport(e),
                             "p_proximity" : GetProximity(d.source, d.target),
-                            "p_mutuality" : GetMutualRanking(d.source, d.target)
+                            "p_mutuality" : GetMutualRanking(d.source, d.target),
                         });
                     }
                 })
@@ -697,8 +869,9 @@
         aster_arc = d3.svg.arc()
                 .innerRadius(aster_innerRadius)
                 .outerRadius(function (d,i) {
-                    var minR = (aster_innerRadius+aster_offset);
+                    var minR = (aster_innerRadius + aster_offset);
                     var percentExport = (d.data.p_total_export/ d.data.total_exportSum);
+                    d.data.percentExport = percentExport;
                     return (aster_radius - minR) * percentExport + minR;
                 });
 
@@ -879,8 +1052,35 @@
 
 
     function UpdateSlices(){
+
+        outerSlices
+                .attr("fill", "silver")
+                .attr("stroke", "black")
+                .attr("class", "outlineArc")
+                .attr("d", aster_outlineArc)
+//                .on("mouseover", function(d) {
+////                    div.transition()
+////                            .duration(200)
+////                            .style("opacity", .9);
+////                    div .html(d.data.partner.name + "<br/>"  + d.data.p_proximity)
+////                            .style("left", (d3.event.pageX) + "px")
+////                            .style("top", (d3.event.pageY - 28) + "px");
+//                    console.log(true);
+//                    ShowPartnerChords(d.data.partner);
+//                    AddAsterInfo(d.data);
+//                    UpdateAsterInfo();
+//                })
+//                .on("mouseout", function(d) {
+//                    console.log(false);
+//                    div.transition()
+//                            .duration(500)
+//                            .style("opacity", 0);
+//                    UpdateChords(0);
+//
+//                });
+
         innerSlices
-                .attr("fill", function(d) {
+                .attr("fill", function(d,i) {
                     var nullColor = "grey";
 //                    if (d.data.source.name == selectedCountry) {
                     var ranking = d.data.p_mutuality;
@@ -893,11 +1093,19 @@
 //            .on('mouseover', tip.show)
 //            .on('mouseout', tip.hide);
 
-        outerSlices
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("class", "outlineArc")
-                .attr("d", aster_outlineArc);
+
+        console.log(outerSlices.data());
+
+        var currentSlice = outerSlices.sort(compareAsterNew2).data()[currentSliceIndex];
+        aster_update(currentSlice);
+
+    }
+
+
+    function aster_update(current){
+        AddAsterInfo(current.data);
+        UpdateAsterInfo();
+        HighlightSlice(current);
     }
 
 
@@ -951,10 +1159,17 @@
     }
 
     function compareAsterNew(a, b){
-        if (asterSortingVal == "export_ranking") {  return b.p_total_export - a.p_total_export; }
-        if (asterSortingVal == "proximity") {       return a.p_proximity - b.p_proximity; }
-        if (asterSortingVal == "mutuality") {       return b.p_mutuality - a.p_mutuality; }
+        if (asterSortingVal == "p_total_export") {  return b.p_total_export - a.p_total_export; }
+        if (asterSortingVal == "p_proximity") {       return a.p_proximity - b.p_proximity; }
+        if (asterSortingVal == "p_mutuality") {       return b.p_mutuality - a.p_mutuality; }
         if (asterSortingVal == "name") {       return d3.ascending(a.partner.name, b.partner.name);  }
+    }
+
+    function compareAsterNew2(a, b){
+        if (asterSortingVal == "p_total_export") {  return b.data.p_total_export - a.data.p_total_export; }
+        if (asterSortingVal == "p_proximity") {       return a.data.p_proximity - b.data.p_proximity; }
+        if (asterSortingVal == "p_mutuality") {       return b.data.p_mutuality - a.data.p_mutuality; }
+        if (asterSortingVal == "name") {       return d3.ascending(a.data.partner.name, b.data.partner.name);  }
     }
 
 
@@ -1019,6 +1234,7 @@
         })
         return val;
     }
+
     function GetProximity(sourceExporter, targetExporter){
         var dx = targetExporter.latitude - sourceExporter.latitude;
         var dy = targetExporter.longitude - sourceExporter.longitude;
