@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7f436fe7-d2d7-45f7-ae4b-0da354138779" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hw2/design.html" afterPath="$PROJECT_DIR$/hw2/design.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hw2/answers.md" afterPath="$PROJECT_DIR$/hw2/answers.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hw2/design.md" afterPath="$PROJECT_DIR$/hw2/design.md" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="2015-cs171-homework.iws" />
@@ -67,13 +68,39 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="design.html" pinned="false" current-in-tab="true">
+      <file leaf-file-name="design.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw2/design.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.44954127" vertical-offset="18145" max-vertical-offset="18690">
+            <state vertical-scroll-proportion="-339.11765" vertical-offset="1095" max-vertical-offset="18690">
               <caret line="1226" column="70" selection-start-line="1226" selection-start-column="70" selection-end-line="1226" selection-end-column="70" />
               <folding />
             </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="answers.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/hw2/answers.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-0.0" vertical-offset="0" max-vertical-offset="900">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="7" selection-end-column="2" />
+              <folding />
+            </state>
+          </provider>
+          <provider editor-type-id="MarkdownPreviewEditor">
+            <state />
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="design.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/hw2/design.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.81448764" vertical-offset="679" max-vertical-offset="1245">
+              <caret line="76" column="19" selection-start-line="76" selection-start-column="19" selection-end-line="76" selection-end-column="19" />
+              <folding />
+            </state>
+          </provider>
+          <provider editor-type-id="MarkdownPreviewEditor">
+            <state />
           </provider>
         </entry>
       </file>
@@ -97,16 +124,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="circles.html" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/section3/material/circles.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="390" max-vertical-offset="1005">
-              <caret line="39" column="20" selection-start-line="39" selection-start-column="20" selection-end-line="39" selection-end-column="20" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="nodes.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/section3/material/nodes.html">
           <provider selected="true" editor-type-id="text-editor">
@@ -120,8 +137,8 @@
       <file leaf-file-name="countries_1995_2012.json" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="131175" max-vertical-offset="1560195">
-              <caret line="8745" column="29" selection-start-line="8745" selection-start-column="29" selection-end-line="8745" selection-end-column="29" />
+            <state vertical-scroll-proportion="5.75" vertical-offset="223199" max-vertical-offset="1560195">
+              <caret line="14860" column="22" selection-start-line="14860" selection-start-column="17" selection-end-line="14860" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -142,11 +159,12 @@
         <option value="$PROJECT_DIR$/hw1/table.html" />
         <option value="$PROJECT_DIR$/hw1/answers.md" />
         <option value="$PROJECT_DIR$/hw2/data/countries_1995_2012.json" />
-        <option value="$PROJECT_DIR$/hw2/answers.md" />
         <option value="$PROJECT_DIR$/section3/material/nodes.html" />
         <option value="$PROJECT_DIR$/hw2/graph.html" />
         <option value="$PROJECT_DIR$/hw1/barchart.html" />
         <option value="$PROJECT_DIR$/hw2/design.html" />
+        <option value="$PROJECT_DIR$/hw2/answers.md" />
+        <option value="$PROJECT_DIR$/hw2/design.md" />
       </list>
     </option>
   </component>
@@ -735,30 +753,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/hw2/design.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="343">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-      <provider editor-type-id="MarkdownPreviewEditor">
-        <state />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/hw2/README.md">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3570">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-      <provider editor-type-id="MarkdownPreviewEditor">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/hw2/answers.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-14.0" vertical-offset="0" max-vertical-offset="570">
-          <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
         </state>
       </provider>
       <provider editor-type-id="MarkdownPreviewEditor">
@@ -841,14 +839,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="131175" max-vertical-offset="1560195">
-          <caret line="8745" column="29" selection-start-line="8745" selection-start-column="29" selection-end-line="8745" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/hw1/barchart.html">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="5354" max-vertical-offset="6600">
@@ -899,12 +889,42 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/hw2/answers.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-0.0" vertical-offset="0" max-vertical-offset="900">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="7" selection-end-column="2" />
+          <folding />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hw2/data/countries_1995_2012.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="5.75" vertical-offset="223199" max-vertical-offset="1560195">
+          <caret line="14860" column="22" selection-start-line="14860" selection-start-column="17" selection-end-line="14860" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/hw2/design.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.44954127" vertical-offset="18145" max-vertical-offset="18690">
+        <state vertical-scroll-proportion="-339.11765" vertical-offset="1095" max-vertical-offset="18690">
           <caret line="1226" column="70" selection-start-line="1226" selection-start-column="70" selection-end-line="1226" selection-end-column="70" />
           <folding />
         </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hw2/design.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.81448764" vertical-offset="679" max-vertical-offset="1245">
+          <caret line="76" column="19" selection-start-line="76" selection-start-column="19" selection-end-line="76" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
       </provider>
     </entry>
   </component>
