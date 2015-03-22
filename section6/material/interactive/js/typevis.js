@@ -46,6 +46,8 @@ TypeVis.prototype.initVis = function(){
     this.y = d3.scale.ordinal()
       .rangeRoundBands([0, this.height], .1);
 
+    this.color = d3.scale.category20();
+
     this.xAxis = d3.svg.axis()
       .scale(this.x)
       .ticks(6)
@@ -100,6 +102,7 @@ TypeVis.prototype.updateVis = function(){
     // updates scales
     this.x.domain(d3.extent(this.displayData, function(d) { return d.count; }));
     this.y.domain(this.displayData.map(function(d) { return d.type; }));
+    this.color.domain(this.displayData.map(function(d) { return d.type; }));
 
     // updates axis
     this.svg.select(".x.axis")
@@ -117,6 +120,10 @@ TypeVis.prototype.updateVis = function(){
     // Append a rect and a text only for the Enter set (new g)
     bar_enter.append("rect");
     bar_enter.append("text");
+
+    bar_enter.on("click", function(d){
+        $(that.eventHandler).trigger("selectionChanged", d.type);
+    });
 
     // Add attributes (position) to all bars
     bar
@@ -137,6 +144,9 @@ TypeVis.prototype.updateVis = function(){
       .transition()
       .attr("width", function(d, i) {
           return that.x(d.count);
+      })
+      .style("fill", function(d){
+            return that.color(d.type);
       });
 
     bar.selectAll("text")
