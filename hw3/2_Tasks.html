@@ -60,15 +60,23 @@
 
         var aggregateCountsForRange = function(from, to){
 
-            var count = 0;
+            //var count = 0;
 
-            // TODO: TASK 2 B -- count here for the given time range
+            // DONETODO: TASK 2 B -- count here for the given time range
             // you might make use of the map and filter functions
             // HINT: javascript Date objects are comparable !!
             // see: http://www.w3schools.com/js/js_date_methods.asp
 
-            allData.forEach( function(d,i){
-                count = (d.time >= from && d.time <= to) ? count + d.count : count;
+//            allData.forEach( function(d,i){
+//                count = (d.time >= from && d.time <= to) ? count + d.count : count;
+//            });
+
+            var filterData = allData.filter( function(d){
+                        return (d.time >= from && d.time <= to);
+                    });
+
+            var count = d3.sum( filterData, function(d){
+                return d.count;
             });
 
             // after you assigned a value to the count variable

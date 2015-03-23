@@ -26,8 +26,13 @@ AgeVis = function(_parentElement, _data, _metaData){
     this.displayData = [];
 
 
-
     // TODO: define all constants here
+    this.margin = {top: 35, right: 5, bottom: 95, left: 50},
+    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
+    this.height = 400 - this.margin.top - this.margin.bottom;
+
+    this.titleHeight = 40;
+    this.paddingY = 5;
 
 
     this.initVis();
@@ -43,8 +48,58 @@ AgeVis.prototype.initVis = function(){
     var that = this; // read about the this
 
 
-    //TODO: construct or select SVG
-    //TODO: create axis and scales
+    this.titleSVG = this.parentElement.append("svg")
+        .attr("width", this.width + this.margin.left + this.margin.right)
+        .attr("height", this.titleHeight)
+        .append("text")
+        .text("age distribution: ")
+        .attr("transform", "translate(" + 0 + "," + (this.titleHeight - 2*this.paddingY) + ")");
+
+    // - create axis
+    this.x = d3.scale.linear()
+        .range([0, this.width]);
+
+    this.y = d3.scale.linear()
+        .range([0, this.height]);// this.height]);
+
+    this.xAxis = d3.svg.axis()
+        .scale(this.x)
+        .orient("bottom");
+
+    this.yAxis = d3.svg.axis()
+        .scale(this.y)
+        .orient("left");
+
+    this.svg = this.parentElement.append("svg")
+        .attr("width", this.width + this.margin.left + this.margin.right)
+        .attr("height", this.height + this.margin.top + this.margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + 35 + "," + this.paddingY + ")");
+
+    this.area = d3.svg.area()
+        .interpolate("monotone")
+        .y(function(d, i) {
+            return that.y(i);
+        })
+        .x0(0)
+        .x1(function(d,i) {
+            return that.x(d);
+        });
+
+    // Add axes visual elements
+    //this.svg.append("g")
+    //    .attr("class", "x axis")
+    //    .attr("transform", "translate(0," + this.height + ")")
+
+    this.svg.append("g")
+        .attr("class", "y axis")
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+
+
 
     // filter, aggregate, modify data
     this.wrangleData(null);
@@ -62,6 +117,7 @@ AgeVis.prototype.wrangleData= function(_filterFunction){
 
     // displayData should hold the data which is visualized
     this.displayData = this.filterAndAggregate(_filterFunction);
+    console.log(this.displayData);
 
     //// you might be able to pass some options,
     //// if you don't pass options -- set the default options
@@ -90,6 +146,30 @@ AgeVis.prototype.updateVis = function(){
     // TODO: implement...
     // TODO: ...update scales
     // TODO: ...update graphs
+    this.x.domain(d3.extent(this.displayData));
+    this.y.domain([0,100]);
+
+    // updates axis
+    this.svg.select(".x.axis")
+        .call(this.xAxis);
+
+    this.svg.select(".y.axis")
+        .call(this.yAxis)
+
+    // updates graph
+    var path = this.svg.selectAll(".area")
+        .data([this.displayData])
+
+    path.enter()
+        .append("path")
+        .attr("class", "area");
+
+    path
+        .transition()
+        .attr("d", this.area);
+
+    path.exit()
+        .remove();
 
 
 }
@@ -103,7 +183,10 @@ AgeVis.prototype.updateVis = function(){
  */
 AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 
-    // TODO: call wrangle function
+    // DONETODO: call wrangle function
+    this.wrangleData( function(d){
+        return (d.time >= selectionStart && d.time <= selectionEnd);
+    });
 
     this.updateVis();
 
@@ -119,6 +202,12 @@ AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 *
 * */
 
+
+var getInnerWidth = function(element) {
+    var style = window.getComputedStyle(element.node(), null);
+
+    return parseInt(style.getPropertyValue('width'));
+}
 
 
 /**
@@ -148,9 +237,15 @@ AgeVis.prototype.filterAndAggregate = function(_filter){
 
     // accumulate all values that fulfill the filter criterion
 
-    // TODO: implement the function that filters the data and sums the values
+    // DONETODO: implement the function that filters the data and sums the values
+    var filterData = this.data.filter( filter );
 
-
+    for( var i=0; i<100; i++){
+        var count = d3.sum(filterData, function(d){
+            return d.ages[i];
+        })
+        res[i] = count;
+    }
 
     return res;
 
