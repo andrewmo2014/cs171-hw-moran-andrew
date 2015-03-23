@@ -27,9 +27,9 @@ CountVis = function(_parentElement, _data, _metaData, _eventHandler){
     this.displayData = [];
 
     // DONETODO: define all "constants" here
-    this.margin = {top: 35, right: 30, bottom: 95, left: 90},
+    this.margin = {top: 35, right: 30, bottom: 45, left: 90},
     this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
-    this.height = 330 - this.margin.top - this.margin.bottom;
+    this.height = 280 - this.margin.top - this.margin.bottom;
 
     this.titleHeight = 40;
     this.paddingY = 5;
@@ -92,6 +92,7 @@ CountVis.prototype.initVis = function(){
         .on("brush", function(){
             // Trigger selectionChanged event. You'd need to account for filtering by time AND type
             //console.log(that.brush.extent());
+            $(that.eventHandler).trigger("selectionChanged", that.brush.empty());
             $(that.eventHandler).trigger("selectionChanged", that.brush.extent());
 
         });

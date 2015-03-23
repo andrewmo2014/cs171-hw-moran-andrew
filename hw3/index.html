@@ -73,11 +73,18 @@
         </div>
 
         <div class="row">
-            <div class="col-md-12" id="prioVis">
+            <div class="col-md-9" id="prioVis">
                 <!-- TODO: delete placeholder svg element -->
-                <svg width="650" height="440" style="background-color: lightgreen">
-                    <text x="50" y="50">HERE should be PrioVis</text>
-                </svg>
+                <!--<svg width="650" height="440" style="background-color: lightgreen">-->
+                    <!--<text x="50" y="50">HERE should be PrioVis</text>-->
+                <!--</svg>-->
+            </div>
+
+            <div class="col-md-3" id="emptyVis">
+                <!-- TODO: delete placeholder svg element -->
+                <!--<svg width="650" height="440" style="background-color: lightgreen">-->
+                <!--<text x="50" y="50">HERE should be PrioVis</text>-->
+                <!--</svg>-->
             </div>
 
         </div>
@@ -119,8 +126,7 @@
                 //TODO: Instantiate all Vis Objects here
                 var count_vis = new CountVis(d3.select("#countVis"), allData, metaData, MyEventHandler);
                 var age_vis = new AgeVis(d3.select("#ageVis"), allData, metaData);
-
-
+                var prio_vis = new PrioVis(d3.select("#prioVis"), allData, metaData);
 
                 // TODO: bind the eventHandler to the Vis Objects
                 // events will be created from the CountVis object (nothing to do here)
@@ -128,6 +134,8 @@
                 $(MyEventHandler).bind("selectionChanged", function(event, selectionStart, selectionEnd){
                     //count_vis.onSelectionChange(selectionStart, selectionEnd);
                     age_vis.onSelectionChange(selectionStart, selectionEnd);
+                    prio_vis.onSelectionChange(selectionStart, selectionEnd);
+
                 });
 
             }

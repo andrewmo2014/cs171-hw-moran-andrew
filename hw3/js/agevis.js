@@ -27,9 +27,9 @@ AgeVis = function(_parentElement, _data, _metaData){
 
 
     // TODO: define all constants here
-    this.margin = {top: 35, right: 5, bottom: 95, left: 50},
+    this.margin = {top: 35, right: 5, bottom: 0, left: 50},
     this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
-    this.height = 400 - this.margin.top - this.margin.bottom;
+    this.height = 300 - this.margin.top - this.margin.bottom;
 
     this.titleHeight = 40;
     this.paddingY = 5;
@@ -117,7 +117,6 @@ AgeVis.prototype.wrangleData= function(_filterFunction){
 
     // displayData should hold the data which is visualized
     this.displayData = this.filterAndAggregate(_filterFunction);
-    console.log(this.displayData);
 
     //// you might be able to pass some options,
     //// if you don't pass options -- set the default options

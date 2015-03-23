@@ -122,8 +122,8 @@ TypeVis.prototype.updateVis = function(){
     bar_enter.append("text");
 
     bar_enter.on("click", function(d){
-        $(that.eventHandler).trigger("selectionChanged", d.type);
-    });
+        console.log('hey!');
+    })
 
     // Add attributes (position) to all bars
     bar
