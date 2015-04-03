@@ -110,7 +110,6 @@ PrioVis.prototype.wrangleData= function(_filterFunction){
 
     // displayData should hold the data which is visualized
     this.displayData = this.filterAndAggregate(_filterFunction);
-    console.log(this.displayData);
 
     //// you might be able to pass some options,
     //// if you don't pass options -- set the default options
@@ -194,7 +193,9 @@ PrioVis.prototype.updateVis = function(){
             return that.height - that.y(d["item-count"]);
         })
         .style("fill", function(d,i){
-            return that.color(d["item-title"]);
+            //return that.color(d["item-color"]);
+            return d["item-color"];
+
         });
 
     //bar.selectAll("text")
@@ -221,7 +222,11 @@ PrioVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 
     // DONETODO: call wrangle function
     this.wrangleData( function(d){
-        return (d.time >= selectionStart && d.time <= selectionEnd);
+
+        var sameDate = (selectionStart.toLocaleDateString() == selectionEnd.toLocaleDateString());
+        return (sameDate) ? (d.time.toLocaleDateString() == selectionStart.toLocaleDateString()) :
+            (d.time >= selectionStart && d.time <= selectionEnd)
+
     });
 
     this.updateVis();

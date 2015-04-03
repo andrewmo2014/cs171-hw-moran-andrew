@@ -184,7 +184,10 @@ AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 
     // DONETODO: call wrangle function
     this.wrangleData( function(d){
-        return (d.time >= selectionStart && d.time <= selectionEnd);
+
+        var sameDate = (selectionStart.toLocaleDateString() == selectionEnd.toLocaleDateString());
+        return (sameDate) ? (d.time.toLocaleDateString() == selectionStart.toLocaleDateString()) :
+                            (d.time >= selectionStart && d.time <= selectionEnd)
     });
 
     this.updateVis();

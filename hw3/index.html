@@ -132,11 +132,16 @@
                 // events will be created from the CountVis object (nothing to do here)
                 // events will be consumed by the PrioVis and AgeVis object (binding should happen here)
                 $(MyEventHandler).bind("selectionChanged", function(event, selectionStart, selectionEnd){
-                    //count_vis.onSelectionChange(selectionStart, selectionEnd);
+                    count_vis.onSelectionChange(selectionStart, selectionEnd, document.getElementById("brushInfo"));
                     age_vis.onSelectionChange(selectionStart, selectionEnd);
                     prio_vis.onSelectionChange(selectionStart, selectionEnd);
 
                 });
+
+                var timeRange = d3.extent(allData, function(d){ return d.time; });
+                var initStart = timeRange[0].toLocaleDateString();
+                var initEnd = timeRange[1].toLocaleDateString();
+                document.getElementById("brushInfo").innerHTML = initStart + " - " + initEnd;
 
             }
 

@@ -92,7 +92,7 @@ CountVis.prototype.initVis = function(){
         .on("brush", function(){
             // Trigger selectionChanged event. You'd need to account for filtering by time AND type
             //console.log(that.brush.extent());
-            $(that.eventHandler).trigger("selectionChanged", that.brush.empty());
+            //$(that.eventHandler).trigger("selectionChanged", that.brush.empty());
             $(that.eventHandler).trigger("selectionChanged", that.brush.extent());
 
         });
@@ -212,12 +212,15 @@ CountVis.prototype.updateVis = function(){
  * be defined here.
  * @param selection
  */
-CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd, brushInfoElement){
 
     // TODO: call wrangle function
 
     // do nothing -- no update when brushing
+    //
 
+    //
+    brushInfoElement.innerHTML = selectionStart.toLocaleDateString() + " - " + selectionEnd.toLocaleDateString();
 
 }
 
