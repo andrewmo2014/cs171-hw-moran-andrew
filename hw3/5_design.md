@@ -6,7 +6,7 @@ Domain tasks:
 - Government:
     - How votes change over a period of time.
     - Distribution of issues over a selected time range.
-    -
+    
 - Anthropologists:
     - Which age group is associated most with a particular issue.
     - How priority of issues change over time
