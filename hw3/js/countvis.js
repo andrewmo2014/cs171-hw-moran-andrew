@@ -114,18 +114,6 @@ CountVis.prototype.initVis = function(){
         .attr("class", "brush");
 
 
-
-    //TODO: FIX ZOOMING
-    this.zoom = d3.behavior.zoom()
-        .x(this.x)
-        //.scale(this.x)
-        .on("zoom", function(d){
-            return that.svg.select(".x.axis").call(that.xAxis);
-        });
-
-
-
-
     // -  implement brushing !!
     // --- ONLY FOR BONUS ---  implement zooming
 
@@ -143,13 +131,6 @@ CountVis.prototype.initVis = function(){
     this.updateVis();
 }
 
-//CountVis.prototype.zoomed = function(svg) {
-//    var that = this;
-//    console.log(that);
-//    //that.select(".x.axis").call(that.xAxis);
-//}
-
-
 
 
 /**
@@ -164,12 +145,13 @@ CountVis.prototype.wrangleData= function(){
 }
 
 
-
 /**
  * the drawing function - should use the D3 selection, enter, exit
  * @param _options -- only needed if different kinds of updates are needed
  */
 CountVis.prototype.updateVis = function(){
+
+    var that = this;
 
     // DONETODO: implement update graphs (D3: update, enter, exit)
     this.x.domain(d3.extent(this.displayData, function(d) { return d.time; }));
@@ -203,6 +185,19 @@ CountVis.prototype.updateVis = function(){
         .selectAll("rect")
         .attr("height", this.height);
 
+    this.zoom = d3.behavior.zoom()
+        .x(that.x)
+        .scaleExtent([1, 50])
+        .on("zoom", zoomed)
+
+    this.svg
+        .call(this.zoom)
+        .on('mousedown.zoom', null);    //don't pan while zooming
+
+    function zoomed() {
+        that.svg.select(".x.axis").call(that.xAxis);
+        that.svg.select(".area").attr("d", that.area);
+    }
 
 }
 
@@ -214,13 +209,22 @@ CountVis.prototype.updateVis = function(){
  */
 CountVis.prototype.onSelectionChange= function (selectionStart, selectionEnd, brushInfoElement){
 
-    // TODO: call wrangle function
 
     // do nothing -- no update when brushing
-    //
-
-    //
     brushInfoElement.innerHTML = selectionStart.toLocaleDateString() + " - " + selectionEnd.toLocaleDateString();
+
+}
+
+CountVis.prototype.ResetZoom= function () {
+
+
+    var that = this;
+
+    //Only readjusts when zoom in/out -- TODO: fix reset zoom
+    this.zoom.scale(1).translate([0, 0]);
+    this.svg
+        .transition()
+        .attr("transform", "translate(" + this.margin.left + "," + this.paddingY + ")scale(" + this.zoom.scale() + ")");
 
 }
 

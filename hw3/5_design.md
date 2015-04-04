@@ -9,15 +9,16 @@ Domain tasks:
     -
 - Anthropologists:
     - Which age group is associated most with a particular issue.
-    - How prioirity of issues change over time
+    - How priority of issues change over time
 
 - Local Community Leaders
     - Most popular issues
-    - Breakdown of ages for a for a particlaur issue
+    - Breakdown of ages for a for a particular issue
 
 Visualization tasks:
 - Selection of particular time intervals (accomplished through brushing)
 - Displaying distribution of priorities and/or ages
+- Comparison with average votes per day/ per priority.
 
 
 ## Part 2: Sketching
@@ -31,7 +32,7 @@ Visualization tasks:
 
 - put your sketches in folder [designStudio/](designStudio/)
 
-- add any additional comments here
+- I have decided to work with the
 
 ### Q5b
 **Question:** Implement one design in your visualization for **PrioVis** and explain why you have chosen this design.
@@ -39,7 +40,7 @@ Visualization tasks:
 -
 **Answer:**
 
-- your reasoning goes here.
+- I have decided to work with the bullet chart representation.
 
 ### Q5c
 **Question:** As a very minimal case study submit a screenshot of an interesting pattern which you have found with your method and briefly describe the pattern.

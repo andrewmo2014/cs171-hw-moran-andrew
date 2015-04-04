@@ -143,6 +143,12 @@
                 var initEnd = timeRange[1].toLocaleDateString();
                 document.getElementById("brushInfo").innerHTML = initStart + " - " + initEnd;
 
+                // bind reset zoom button to a function (-- ONLY FOR BONUS --)
+                d3.select("#fitInBtn").on("click", function() {
+                    // TODO: -- ONLY FOR BONUS --
+                    count_vis.ResetZoom();
+                });
+
             }
 
             // call this function after both files are loaded -- error should be "null" if no error
@@ -212,10 +218,10 @@
                     .defer(d3.json, 'data/MYWorld_fields.json')
                     .await(dataLoaded);
 
-                // bind reset zoom button to a function (-- ONLY FOR BONUS --)
-                d3.select("#fitInBtn").on("click", function() {
-                    // TODO: -- ONLY FOR BONUS --
-                });
+//                // bind reset zoom button to a function (-- ONLY FOR BONUS --)
+//                d3.select("#fitInBtn").on("click", function() {
+//                    // TODO: -- ONLY FOR BONUS --
+//                });
 
 
             }

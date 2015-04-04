@@ -3,7 +3,6 @@
  */
 
 
-
 /*
  *
  * ======================================================
@@ -19,21 +18,22 @@
  * @param _metaData -- the meta-data / data description object
  * @constructor
  */
-AgeVis = function(_parentElement, _data, _metaData){
+PrioVis = function(_parentElement, _data, _metaData){
     this.parentElement = _parentElement;
     this.data = _data;
     this.metaData = _metaData;
     this.displayData = [];
 
-
     // TODO: define all constants here
-    this.margin = {top: 35, right: 5, bottom: 0, left: 50},
-    this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
-    this.height = 300 - this.margin.top - this.margin.bottom;
+    this.margin = {top: 0, right: 30, bottom: 10, left: 225},
+        this.width = getInnerWidth(this.parentElement) - this.margin.left - this.margin.right,
+        this.height = 20;
+
+    console.log(this.width);
 
     this.titleHeight = 40;
+    this.totalHeight = 330;
     this.paddingY = 5;
-
 
     this.initVis();
 
@@ -43,7 +43,7 @@ AgeVis = function(_parentElement, _data, _metaData){
 /**
  * Method that sets up the SVG and the variables
  */
-AgeVis.prototype.initVis = function(){
+PrioVis.prototype.initVis = function(){
 
     var that = this; // read about the this
 
@@ -52,54 +52,8 @@ AgeVis.prototype.initVis = function(){
         .attr("width", this.width + this.margin.left + this.margin.right)
         .attr("height", this.titleHeight)
         .append("text")
-        .text("age distribution: ")
+        .text("distribution of priorities (compared to average):")
         .attr("transform", "translate(" + 0 + "," + (this.titleHeight - 2*this.paddingY) + ")");
-
-    // - create axis
-    this.x = d3.scale.linear()
-        .range([0, this.width]);
-
-    this.y = d3.scale.linear()
-        .range([0, this.height]);// this.height]);
-
-    this.xAxis = d3.svg.axis()
-        .scale(this.x)
-        .orient("bottom");
-
-    this.yAxis = d3.svg.axis()
-        .scale(this.y)
-        .orient("left");
-
-    this.svg = this.parentElement.append("svg")
-        .attr("width", this.width + this.margin.left + this.margin.right)
-        .attr("height", this.height + this.margin.top + this.margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + 35 + "," + this.paddingY + ")");
-
-    this.area = d3.svg.area()
-        .interpolate("monotone")
-        .y(function(d, i) {
-            return that.y(i);
-        })
-        .x0(0)
-        .x1(function(d,i) {
-            return that.x(d);
-        });
-
-    // Add axes visual elements
-    //this.svg.append("g")
-    //    .attr("class", "x axis")
-    //    .attr("transform", "translate(0," + this.height + ")")
-
-    this.svg.append("g")
-        .attr("class", "y axis")
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-
-
 
     // filter, aggregate, modify data
     this.wrangleData(null);
@@ -113,7 +67,7 @@ AgeVis.prototype.initVis = function(){
  * Method to wrangle the data. In this case it takes an options object
  * @param _filterFunction - a function that filters data or "null" if none
  */
-AgeVis.prototype.wrangleData= function(_filterFunction){
+PrioVis.prototype.wrangleData= function(_filterFunction){
 
     // displayData should hold the data which is visualized
     this.displayData = this.filterAndAggregate(_filterFunction);
@@ -123,10 +77,6 @@ AgeVis.prototype.wrangleData= function(_filterFunction){
     //// the default is: var options = {filter: function(){return true;} }
     //var options = _options || {filter: function(){return true;}};
 
-
-
-
-
 }
 
 
@@ -134,42 +84,41 @@ AgeVis.prototype.wrangleData= function(_filterFunction){
 /**
  * the drawing function - should use the D3 selection, enter, exit
  */
-AgeVis.prototype.updateVis = function(){
+PrioVis.prototype.updateVis = function(){
 
     // Dear JS hipster,
     // you might be able to pass some options as parameter _option
     // But it's not needed to solve the task.
     // var options = _options || {};
 
+    var that = this;
 
-    // TODO: implement...
-    // TODO: ...update scales
-    // TODO: ...update graphs
-    this.x.domain(d3.extent(this.displayData));
-    this.y.domain([0,100]);
+    this.chart = d3.bullet()
+        .width(that.width)
+        .height(that.height);
 
-    // updates axis
-    this.svg.select(".x.axis")
-        .call(this.xAxis);
+    this.svg = this.parentElement.selectAll("svg.bullet")
+        .data(this.displayData)
+        .enter().append("svg")
+        .attr("class", "bullet")
+        .attr("width", that.width + that.margin.left + that.margin.right)
+        .attr("height", function(d,i){
+            var h = that.height;
+            return (i !== 15) ? h : h + that.margin.bottom*2;
+        })
+        .append("g")
+        .attr("transform", "translate(" + that.margin.left + "," + that.margin.top + ")")
+        .call(this.chart);
 
-    this.svg.select(".y.axis")
-        .call(this.yAxis)
+    this.title = this.svg.append("g")
+        .style("text-anchor", "end")
+        .attr("transform", function(d){
+            return "translate(-6," + ((that.height + that.margin.top + that.margin.bottom) / 2) + ")"
+        });
 
-    // updates graph
-    var path = this.svg.selectAll(".area")
-        .data([this.displayData])
-
-    path.enter()
-        .append("path")
-        .attr("class", "area");
-
-    path
-        .transition()
-        .attr("d", this.area);
-
-    path.exit()
-        .remove();
-
+    this.title.append("text")
+        .attr("class", "title")
+        .text(function(d) { return d["item-title"]; });
 
 }
 
@@ -180,35 +129,31 @@ AgeVis.prototype.updateVis = function(){
  * be defined here.
  * @param selection
  */
-AgeVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
+PrioVis.prototype.onSelectionChange= function (selectionStart, selectionEnd){
 
     // DONETODO: call wrangle function
     this.wrangleData( function(d){
-        //console.log(d.time.toLocaleDateString());
-        //console.log(selectionStart.toLocaleDateString());
-        //console.log(selectionEnd.toLocaleDateString());
 
         var sameDate = (selectionStart.toLocaleDateString() == selectionEnd.toLocaleDateString());
-
         return (sameDate) ? (d.time.toLocaleDateString() == selectionStart.toLocaleDateString()) :
-                            (d.time >= selectionStart && d.time <= selectionEnd)
-
+            (d.time >= selectionStart && d.time <= selectionEnd)
 
     });
 
-    this.updateVis();
+    //this.updateVis();
+    this.svg.data(this.displayData).call(this.chart)
 
 
 }
 
 
 /*
-*
-* ==================================
-* From here on only HELPER functions
-* ==================================
-*
-* */
+ *
+ * ==================================
+ * From here on only HELPER functions
+ * ==================================
+ *
+ * */
 
 
 var getInnerWidth = function(element) {
@@ -223,7 +168,7 @@ var getInnerWidth = function(element) {
  * @param _filter - A filter can be, e.g.,  a function that is only true for data of a given time range
  * @returns {Array|*}
  */
-AgeVis.prototype.filterAndAggregate = function(_filter){
+PrioVis.prototype.filterAndAggregate = function(_filter){
 
 
     // Set filter to a function that accepts all items
@@ -237,28 +182,39 @@ AgeVis.prototype.filterAndAggregate = function(_filter){
 
     var that = this;
 
-    // create an array of values for age 0-100
-    var res = d3.range(100).map(function () {
-        return 0;
-    });
-
+    var res = this.metaData["priorities"];
 
     // accumulate all values that fulfill the filter criterion
+    // Get averages and age ranges
+    var resTotal = d3.range(0,16).map(function(){return 0;})
+    for( var i=0; i<16; i++){
+        var total = d3.sum(this.data, function(d){
+            return d.prios[i];
+        })
+        resTotal[i] = total;
+    }
+    var totalDays = d3.sum(this.data, function(d){ return 1; });
+    var resAvg = resTotal.map( function(d){ return d/totalDays; });
+
+    //console.log(resAvg);
 
     // DONETODO: implement the function that filters the data and sums the values
     var filterData = this.data.filter( filter );
 
-    for( var i=0; i<100; i++){
+    for( var i=0; i<16; i++){
         var count = d3.sum(filterData, function(d){
-            return d.ages[i];
-        })
-        res[i] = count;
+            return d.prios[i];
+        });
+
+        res[i]["item-count"] = count;
+        res[i]["item-globalAvg"] = resAvg[i];
+        res[i]["item-ranges"] = [0, 0];
     }
+
+    res = Object.keys(res).map( function(d) {
+        return res[d];
+    });
 
     return res;
 
 }
-
-
-
-
